@@ -25,9 +25,8 @@ import {
   ArrowRight,
   HelpCircle,
 } from "lucide-react"
-import { useCollection, useQuestionBank } from "@/lib/storage/hooks"
+import { useCollection, useQuestionBank, useConcepts } from "@/lib/storage/hooks"
 import { COLLECTIONS } from "@/lib/storage/store"
-import { CONCEPTS as CURATED_CONCEPTS } from "@/lib/exams/gate-cse/concepts"
 import { computeNextSrsCard, getOverduePriority } from "@/lib/srs/sm2"
 import type { SrsCard, SrsRating, Concept } from "@/lib/domain/types"
 import { LOCAL_USER_ID, GATE_CSE_EXAM_ID } from "@/lib/domain/types"
@@ -41,7 +40,7 @@ export default function RevisePage() {
   const [isRevealed, setIsRevealed] = useState(false)
   const [completedCount, setCompletedCount] = useState(0)
 
-  const allConcepts = useMemo(() => CURATED_CONCEPTS, [])
+  const allConcepts = useConcepts()
 
   // Build due queue for today, capped at 15 cards max
   const queue = useMemo(() => {

@@ -335,11 +335,25 @@ class LocalStoreImpl implements StudyStore {
     }
   }
 
+  private getActiveExamId(): string {
+    const settings = this.readCollection<AppSettings>("settings")[0]
+    const profile = (settings as any)?.profile
+    if (!profile || !profile.exam) return "gate-cse"
+    if (profile.exam === "gate" && profile.domain) return `gate-${profile.domain}`
+    return profile.exam
+  }
+
   async list<K extends Collection>(
     collection: K,
     query?: Query
   ): Promise<CollectionTypeMap[K][]> {
     let records = this.readCollection<CollectionTypeMap[K]>(collection)
+
+    // Automatically scope exam-specific collections
+    if (collection !== "settings" && collection !== "questions") {
+      const activeExamId = this.getActiveExamId()
+      records = records.filter(r => (r as any).examId === activeExamId || !(r as any).examId)
+    }
 
     if (query?.where) {
       const conditions = query.where
@@ -376,13 +390,32 @@ class LocalStoreImpl implements StudyStore {
     id: string
   ): Promise<CollectionTypeMap[K] | null> {
     const records = this.readCollection<CollectionTypeMap[K]>(collection)
-    return records.find((r) => (r as { id: string }).id === id) ?? null
+    const record = records.find((r) => (r as { id: string }).id === id) ?? null
+    
+    // Enforce scoping on direct get if applicable
+    if (record && collection !== "settings" && collection !== "questions") {
+      if ((record as any).examId && (record as any).examId !== this.getActiveExamId()) {
+        return null
+      }
+    }
+    return record
   }
 
   async put<K extends Collection>(
     collection: K,
     record: CollectionTypeMap[K]
   ): Promise<CollectionTypeMap[K]> {
+    // Automatically stamp new records with the active examId if applicable
+    if (collection !== "settings" && collection !== "questions") {
+      const rec = record as any
+      if (!rec.examId) {
+        rec.examId = this.getActiveExamId()
+      }
+      if (!rec.userId) {
+        rec.userId = "local"
+      }
+    }
+
     const records = this.readCollection<CollectionTypeMap[K]>(collection)
     const id = (record as { id: string }).id
     const idx = records.findIndex((r) => (r as { id: string }).id === id)
@@ -412,6 +445,7 @@ class LocalStoreImpl implements StudyStore {
     this.ensureMigrated()
     const data: StudyBackup["data"] = {}
     for (const col of Object.values(COLLECTIONS) as Collection[]) {
+      // Export all records from localStorage directly so backup includes all exams
       const records = this.readCollection(col)
       if (records.length > 0) {
         data[col] = records
@@ -421,7 +455,7 @@ class LocalStoreImpl implements StudyStore {
     const backup: StudyBackup = {
       version: SCHEMA_VERSION,
       exportedAt: new Date().toISOString(),
-      examId: GATE_CSE_EXAM_ID,
+      examId: this.getActiveExamId(),
       userId: LOCAL_USER_ID,
       data,
     }
@@ -450,6 +484,8 @@ class LocalStoreImpl implements StudyStore {
       return report
     }
 
+    const backupExamId = backup.examId || this.getActiveExamId()
+
     for (const [col, incoming] of Object.entries(backup.data) as [Collection, unknown[]][]) {
       if (!incoming || !Array.isArray(incoming)) continue
 
@@ -464,7 +500,7 @@ class LocalStoreImpl implements StudyStore {
         // Wipe and insert all incoming records
         const stamped = incoming.map((r) => ({
           userId: LOCAL_USER_ID,
-          examId: GATE_CSE_EXAM_ID,
+          examId: backupExamId,
           ...(r as object),
         }))
         const err = this.writeCollection(col, stamped as unknown as { id: string }[])
@@ -478,10 +514,10 @@ class LocalStoreImpl implements StudyStore {
           if (!r.id) { skipped++; continue }
           if (existingById.has(r.id)) {
             const idx = merged.findIndex((e) => e.id === r.id)
-            merged[idx] = { ...r, id: r.id, userId: (r as {userId?: string}).userId ?? LOCAL_USER_ID, examId: (r as {examId?: string}).examId ?? GATE_CSE_EXAM_ID } as { id: string }
+            merged[idx] = { ...r, id: r.id, userId: (r as {userId?: string}).userId ?? LOCAL_USER_ID, examId: (r as {examId?: string}).examId ?? backupExamId } as { id: string }
             updated++
           } else {
-            merged.push({ ...r, id: r.id!, userId: (r as {userId?: string}).userId ?? LOCAL_USER_ID, examId: (r as {examId?: string}).examId ?? GATE_CSE_EXAM_ID } as { id: string })
+            merged.push({ ...r, id: r.id!, userId: (r as {userId?: string}).userId ?? LOCAL_USER_ID, examId: (r as {examId?: string}).examId ?? backupExamId } as { id: string })
             added++
           }
         }

@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
+import { ProfilePanel } from "@/components/settings/profile-panel"
 import { ExportPanel, ImportPanel } from "@/components/settings/backup-panel"
 import { AvailabilityPanel } from "@/components/settings/availability-panel"
 import { Card } from "@/components/ui/card"
 import { Settings as SettingsIcon } from "lucide-react"
 
 export const metadata: Metadata = {
-  title: "Settings — GATE CSE Console",
+  title: "Settings — GateConsole",
   description:
     "Export and import your study data backup. Configure weekly study availability and blackout dates.",
 }
@@ -26,6 +27,10 @@ export default function SettingsPage() {
 
       <div className="space-y-6">
         
+        <Card accentBorder="green" className="overflow-hidden">
+          <ProfilePanel />
+        </Card>
+
         <Card accentBorder="blue" className="overflow-hidden">
           <AvailabilityPanel />
         </Card>

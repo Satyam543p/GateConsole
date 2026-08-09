@@ -88,6 +88,8 @@ export function useCollection<K extends Collection>(
   return { data, loading, error, put, remove, refresh: fetch }
 }
 
+import { getActiveExamId, getQuestions } from "../exams/registry"
+
 // ─── useAttempts — backward-compatible replacement for lib/use-attempts.ts ───
 
 export interface UseAttemptsResult {
@@ -100,18 +102,22 @@ export interface UseAttemptsResult {
 
 export function useAttempts(): UseAttemptsResult {
   const store = getStore()
-  const { data, loading, put, remove: removeItem } = useCollection(COLLECTIONS.attempts)
+  const { settings } = useSettings()
+  const activeExamId = getActiveExamId(settings.profile)
+  
+  const query = useMemo(() => ({ where: { examId: activeExamId } }), [activeExamId])
+  const { data, loading, put, remove: removeItem } = useCollection(COLLECTIONS.attempts, query)
 
   const save = useCallback(
     (attempt: StoredAttempt) => {
       const stamped: StoredAttempt = {
         ...attempt,
         userId: attempt.userId ?? LOCAL_USER_ID,
-        examId: attempt.examId ?? GATE_CSE_EXAM_ID,
+        examId: attempt.examId ?? activeExamId,
       }
       put(stamped)
     },
-    [put]
+    [put, activeExamId]
   )
 
   const remove = useCallback(
@@ -184,12 +190,15 @@ export function useQuestionBank(): {
   refresh: () => Promise<void>
 } {
   const { data: userQuestions, loading, error, refresh } = useCollection(COLLECTIONS.questions)
+  const { settings } = useSettings()
+  const activeExamId = getActiveExamId(settings.profile)
 
   const questions = useMemo(() => {
     const merged = new Map<string, Question>()
 
-    // 1. Static seed
-    for (const q of QUESTIONS) {
+    // 1. Static seed based on exam
+    const staticQuestions = getQuestions(activeExamId)
+    for (const q of staticQuestions) {
       merged.set(q.id, q as unknown as Question)
     }
 
@@ -199,12 +208,28 @@ export function useQuestionBank(): {
     }
 
     return Array.from(merged.values())
-  }, [userQuestions])
+  }, [userQuestions, activeExamId])
 
   const questionMap = useMemo(() => {
     return new Map(questions.map((q) => [q.id, q]))
   }, [questions])
 
   return { questions, questionMap, loading, error, refresh }
+}
+
+// ─── useTests ──────────────────────────────────────────────────────────
+
+import { getTests, getConcepts } from "../exams/registry"
+
+export function useTests() {
+  const { settings } = useSettings()
+  const activeExamId = getActiveExamId(settings.profile)
+  return useMemo(() => getTests(activeExamId), [activeExamId])
+}
+
+export function useConcepts() {
+  const { settings } = useSettings()
+  const activeExamId = getActiveExamId(settings.profile)
+  return useMemo(() => getConcepts(activeExamId), [activeExamId])
 }
 

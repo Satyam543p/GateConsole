@@ -303,6 +303,13 @@ export interface WeeklyAvailability {
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 
+export interface UserProfile {
+  name: string
+  exam: string
+  domain?: string
+  onboardingComplete: boolean
+}
+
 export interface SubjectProgressState {
   completed: boolean
   revised: boolean
@@ -316,6 +323,7 @@ export interface AppSettings extends UserRecord {
   includeUnverifiedInAnalytics: boolean
   paceCoachEnabled: boolean
   subjectProgress: Record<string, SubjectProgressState>
+  profile?: UserProfile
 }
 
 export const DEFAULT_SETTINGS: Omit<AppSettings, "userId" | "examId"> = {

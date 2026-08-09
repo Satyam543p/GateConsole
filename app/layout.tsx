@@ -3,15 +3,25 @@ import type { Metadata, Viewport } from 'next'
 import { Nunito, DM_Sans } from 'next/font/google'
 import { SiteNav } from '@/components/site-nav'
 import { StaleBackupBanner } from '@/components/stale-backup-banner'
+import 'katex/dist/katex.min.css'
 import './globals.css'
 
 const _nunito = Nunito({ subsets: ['latin'], variable: '--font-nunito' })
 const _dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
 
 export const metadata: Metadata = {
-  title: 'GATE CSE Console',
-  description: 'Data-driven GATE CSE strategy console.',
-  generator: 'v0.app',
+  title: 'GateConsole',
+  description: 'Data-driven strategy engine for competitive exams.',
+  generator: 'Next.js',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'GateConsole',
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: [
       {
@@ -32,6 +42,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   colorScheme: 'light',
   themeColor: '#FAFBFF',
 }
@@ -52,7 +66,7 @@ export default function RootLayout({
       <body className="antialiased flex h-screen overflow-hidden bg-background text-primary-text font-sans relative">
         <BackgroundElements />
         <SiteNav />
-        <div className="flex-1 flex flex-col h-screen overflow-y-auto relative bg-transparent z-10 md:ml-16 pb-[60px] md:pb-0">
+        <div className="flex-1 flex flex-col h-screen overflow-y-auto overflow-x-hidden relative bg-transparent z-10 md:ml-16 pb-[60px] md:pb-0">
           <StaleBackupBanner />
           <KeyboardShortcutsModal />
           {children}

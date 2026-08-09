@@ -3,10 +3,9 @@
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import { ArrowRight, Trash2, TrendingDown, TrendingUp, Printer, Target, Flame, ShieldAlert, Sparkles, Zap, AlertTriangle } from "lucide-react"
-import { TESTS } from "@/lib/question-bank"
 import { type StoredAttempt, formatClock, scoreAttempt } from "@/lib/test-types"
 import { useAttempts } from "@/lib/use-attempts"
-import { useQuestionBank, useCollection } from "@/lib/storage/hooks"
+import { useQuestionBank, useCollection, useTests } from "@/lib/storage/hooks"
 import { COLLECTIONS } from "@/lib/storage/store"
 import type { StudySession, MistakeEntry } from "@/lib/domain/types"
 import {
@@ -115,6 +114,7 @@ function TrendChart({ attempts }: { attempts: StoredAttempt[] }) {
 export function AttemptHistory() {
   const { attempts, ready, remove, clear } = useAttempts()
   const { questionMap } = useQuestionBank()
+  const TESTS = useTests()
   const { data: sessions } = useCollection(COLLECTIONS.sessions)
   const { data: mistakes } = useCollection(COLLECTIONS.mistakes)
 

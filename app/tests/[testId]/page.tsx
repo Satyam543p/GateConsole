@@ -1,10 +1,10 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { ExamRunner } from "@/components/exam-runner"
-import { TESTS, getTest } from "@/lib/question-bank"
+import { getAllTests, getTest } from "@/lib/exams/registry"
 
 export function generateStaticParams() {
-  return TESTS.map((t) => ({ testId: t.id }))
+  return getAllTests().map((t) => ({ testId: t.id }))
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ testId: string }> }): Promise<Metadata> {

@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Flag, X, Calculator as CalcIcon, FileEdit } from "lucide-react"
+import Latex from "react-latex-next"
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Flag, X, Calculator as CalcIcon, FileEdit, Target } from "lucide-react"
 
 import { type Response, type StoredAttempt as LegacyStoredAttempt, type TestDefinition, formatClock, isAttempted, scoreAttempt, isCorrect } from "@/lib/test-types"
 import { newAttemptId, useAttempts } from "@/lib/use-attempts"
@@ -248,15 +249,39 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
   const statusCounts = useMemo(() => {
     let ans = 0, notAns = 0, mrk = 0, ansMrk = 0, notVis = 0
     for (const q of questions) {
-      const s = gateStatusOf(q.id)
-      if (s === "answered") ans++
-      else if (s === "not-answered") notAns++
-      else if (s === "marked") mrk++
-      else if (s === "answered-marked") ansMrk++
+      const gs = gateStatusOf(q.id)
+      if (gs === "answered") ans++
+      else if (gs === "not-answered") notAns++
+      else if (gs === "marked") mrk++
+      else if (gs === "answered-marked") ansMrk++
       else notVis++
     }
     return { ans, notAns, mrk, ansMrk, notVis }
-  }, [questions, responses, marked, visited])
+  }, [gateStatusOf, questions])
+
+  const groupedQuestions = useMemo(() => {
+    const groups: { subject: string, startIndex: number, questions: typeof questions }[] = []
+    let currentSubject = ""
+    let currentGroup: typeof questions = []
+    let startIndex = 0
+
+    questions.forEach((q, i) => {
+      if (q.subject !== currentSubject) {
+        if (currentGroup.length > 0) {
+          groups.push({ subject: currentSubject, startIndex, questions: currentGroup })
+        }
+        currentSubject = q.subject
+        startIndex = i
+        currentGroup = [q]
+      } else {
+        currentGroup.push(q)
+      }
+    })
+    if (currentGroup.length > 0) {
+      groups.push({ subject: currentSubject, startIndex, questions: currentGroup })
+    }
+    return groups
+  }, [questions])
 
   const statusOf = (qid: string): Status => {
     if (marked[qid]) return "marked"
@@ -367,46 +392,45 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
           </div>
 
           {/* Tools: Calculator & Scratchpad */}
-          <div className="ml-auto flex items-center gap-3 font-mono text-[11px]">
+          <div className="ml-auto flex items-center gap-1.5 md:gap-3 font-mono text-[11px]">
             <button
               type="button"
               onClick={() => setShowCalc(!showCalc)}
               className={cn(
-                "flex items-center gap-1.5 border-2 rounded-xl px-3 py-1.5 transition-colors font-bold",
+                "flex items-center justify-center size-8 md:size-auto md:px-3 md:py-1.5 md:gap-1.5 border-2 rounded-xl transition-colors font-bold",
                 showCalc
                   ? "border-[#1CB0F6] bg-[#1CB0F6]/10 text-[#1CB0F6]"
                   : "border-border bg-background text-secondary-text hover:text-foreground"
               )}
             >
-              <CalcIcon className="size-3.5" />
-              Calculator
+              <CalcIcon className="size-4 md:size-3.5" />
+              <span className="hidden md:inline">Calculator</span>
             </button>
             <button
               type="button"
               onClick={() => setShowScratchpad(!showScratchpad)}
               className={cn(
-                "flex items-center gap-1.5 border-2 rounded-xl px-3 py-1.5 transition-colors font-bold",
+                "flex items-center justify-center size-8 md:size-auto md:px-3 md:py-1.5 md:gap-1.5 border-2 rounded-xl transition-colors font-bold",
                 showScratchpad
                   ? "border-[#FF9600] bg-[#FF9600]/10 text-[#FF9600]"
                   : "border-border bg-background text-secondary-text hover:text-foreground"
               )}
             >
-              <FileEdit className="size-3.5" />
-              Scratchpad
+              <FileEdit className="size-4 md:size-3.5" />
+              <span className="hidden md:inline">Scratchpad</span>
             </button>
           </div>
 
           {test.kind === "practice" ? (
-            <div className="border-3 border-[#1CB0F6] bg-[#DDF4FF] px-4 py-1.5 text-center rounded-xl ml-auto mr-4 flex flex-col justify-center shadow-neo-sm">
-              <p className="font-mono text-sm leading-none text-[#1899D6] font-bold">
-                PRACTICE MODE
+            <div className="border-2 md:border-3 border-[#1CB0F6] bg-[#DDF4FF] px-2 md:px-4 py-1 md:py-1.5 text-center rounded-xl ml-auto mr-2 md:mr-4 flex flex-col justify-center shadow-neo-sm">
+              <p className="font-mono text-[10px] md:text-sm leading-none text-[#1899D6] font-bold">
+                PRACTICE
               </p>
-              <p className="mt-1 font-mono text-[9px] font-bold tracking-widest text-[#1899D6] uppercase">Untimed</p>
             </div>
           ) : (
             <div
               className={cn(
-                "border-3 rounded-xl px-4 py-1.5 text-center ml-auto mr-4 shadow-neo-sm",
+                "border-2 md:border-3 rounded-xl px-2 md:px-4 py-1 md:py-1.5 text-center ml-auto mr-2 md:mr-4 shadow-neo-sm",
                 lowTime ? "border-destructive bg-[#FFE5E5]" : "border-border bg-background",
               )}
               role="timer"
@@ -414,20 +438,20 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
             >
               <p
                 className={cn(
-                  "font-mono text-xl font-bold leading-none tabular-nums",
+                  "font-mono text-[14px] md:text-xl font-bold leading-none tabular-nums",
                   lowTime ? "text-destructive" : "text-foreground",
                 )}
               >
                 {formatClock(remaining)}
               </p>
-              <p className="mt-1 font-mono text-[9px] font-bold tracking-widest text-muted-foreground uppercase">remaining</p>
+              <p className="hidden md:block mt-1 font-mono text-[9px] font-bold tracking-widest text-muted-foreground uppercase">remaining</p>
             </div>
           )}
 
           <button
             type="button"
             onClick={() => setConfirmSubmit(true)}
-            className="shrink-0 neo-btn bg-primary px-5 py-2 font-bold text-sm tracking-wide text-primary-foreground ml-auto sm:ml-0"
+            className="hidden md:block shrink-0 neo-btn bg-primary px-5 py-2 font-bold text-sm tracking-wide text-primary-foreground ml-auto sm:ml-0"
           >
             {test.kind === "practice" ? "Finish Practice" : "Submit Test"}
           </button>
@@ -441,7 +465,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-8 px-4 py-6 md:px-8 lg:flex-row">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 px-4 py-6 md:px-8 lg:flex-row lg:gap-8">
         {/* question pane */}
         <main className="min-w-0 flex-1">
           {current && (
@@ -502,8 +526,10 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                 return null
               })()}
 
-              <div className="px-6 py-8">
-                <p className="text-[16px] font-medium leading-relaxed text-pretty">{current.text}</p>
+              <div className="px-4 py-6 md:px-6 md:py-8">
+                <div className="text-[15px] md:text-[16px] font-medium leading-relaxed text-pretty space-y-4">
+                  <Latex>{current.text}</Latex>
+                </div>
 
                 {current.code && (
                   <pre className="mt-6 overflow-x-auto border-3 border-border rounded-xl bg-[#1F2937] p-5 font-mono text-[11px] sm:text-[13px] leading-relaxed text-white shadow-neo-sm custom-scrollbar">
@@ -554,7 +580,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                               onClick={() => (current.type === "MSQ" ? toggleMsq(i) : setResponse(i))}
                               aria-pressed={selected}
                               className={cn(
-                                "flex w-full items-start gap-4 border-3 rounded-xl px-5 py-4 text-left transition-all shadow-neo-sm hover:-translate-y-0.5",
+                                "flex w-full items-start gap-3 md:gap-4 border-[2px] md:border-[3px] rounded-xl px-4 py-3 md:px-5 md:py-4 text-left transition-all shadow-neo-sm hover:-translate-y-0.5",
                                 selected
                                   ? "border-[#1CB0F6] bg-[#DDF4FF]"
                                   : "border-border bg-white",
@@ -576,7 +602,9 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                                   String.fromCharCode(65 + i)
                                 )}
                               </span>
-                              <span className={cn("text-[15px] font-medium leading-relaxed text-pretty", selected ? "text-[#1899D6]" : "text-foreground")}>{opt}</span>
+                              <div className={cn("flex-1 text-[14px] md:text-[15px] font-medium leading-relaxed text-pretty overflow-x-auto", selected ? "text-[#1899D6]" : "text-foreground")}>
+                                <Latex>{opt}</Latex>
+                              </div>
                             </button>
                           </li>
                         )
@@ -606,9 +634,9 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                         )}
                       </div>
                       <h4 className="font-mono text-[12px] font-bold uppercase tracking-wider text-primary mb-3 relative z-10">Explanation</h4>
-                      <p className="text-[15px] font-medium leading-relaxed text-foreground relative z-10">
-                        {current.explanation || "No explanation provided for this question."}
-                      </p>
+                      <div className="text-[14px] md:text-[15px] font-medium leading-relaxed text-foreground relative z-10 space-y-4 overflow-x-auto">
+                        <Latex>{current.explanation || "No explanation provided for this question."}</Latex>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -654,17 +682,29 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                   Next
                   <ChevronRight className="size-4" aria-hidden="true" />
                 </button>
+
+                {/* Mobile Submit Button */}
+                <button
+                  type="button"
+                  onClick={() => setConfirmSubmit(true)}
+                  className="md:hidden shrink-0 neo-btn bg-primary px-4 py-2 font-bold text-sm tracking-wide text-primary-foreground ml-2"
+                >
+                  {test.kind === "practice" ? "Finish" : "Submit"}
+                </button>
               </div>
             </article>
           )}
         </main>
 
-        {/* TCS iON GATE Question Palette */}
-        <aside className="w-full shrink-0 lg:w-80">
-          <div className="neo-card bg-card p-5 lg:sticky lg:top-24 space-y-5">
-            <h2 className="font-mono text-[12px] font-bold tracking-widest text-primary uppercase border-b-2 border-border pb-3">
+        <aside className="w-full shrink-0 lg:w-80 order-first lg:order-last mb-2 lg:mb-0">
+          {/* Desktop Version */}
+          <div className="hidden lg:block neo-card bg-card p-5 sticky top-24 space-y-5">
+            <h2 className="font-heading text-xl font-black tracking-tight text-foreground flex items-center gap-2">
+              <Target className="size-5 text-[#1CB0F6]" />
               Question Palette
             </h2>
+
+            {/* Desktop Grid */}
             <ol className="grid grid-cols-6 gap-2">
               {questions.map((q, i) => {
                 const gs = gateStatusOf(q.id)
@@ -725,6 +765,57 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                 <dd className="tabular-nums text-muted-foreground text-sm">{statusCounts.notVis}</dd>
               </div>
             </dl>
+          </div>
+
+          {/* Mobile Version */}
+          <div className="lg:hidden flex flex-col">
+            {/* Horizontal Strip */}
+            <div className="flex overflow-x-auto gap-6 pb-2 custom-scrollbar px-1">
+              {groupedQuestions.map((group) => (
+                <div key={group.subject} className="flex flex-col gap-2 shrink-0">
+                  <span className="font-mono text-[11px] font-bold tracking-widest uppercase text-[#1F2937]">
+                    {group.subject}
+                  </span>
+                  <ol className="flex gap-2">
+                    {group.questions.map((q, localIndex) => {
+                      const i = group.startIndex + localIndex
+                      const gs = gateStatusOf(q.id)
+                      return (
+                        <li key={q.id}>
+                          <button
+                            type="button"
+                            onClick={() => goTo(i)}
+                            aria-current={i === index ? "true" : undefined}
+                            aria-label={`Question ${i + 1}, ${gs}`}
+                            className={cn(
+                              "flex size-9 shrink-0 items-center justify-center border-2 rounded-lg font-mono text-[13px] font-bold tabular-nums transition-all relative shadow-neo-sm hover:-translate-y-0.5",
+                              gs === "not-visited" && "border-border bg-white text-muted-foreground",
+                              gs === "not-answered" && "border-[#FF4B4B] bg-[#FFE5E5] text-[#FF4B4B]",
+                              gs === "answered" && "border-[#58CC02] bg-[#58CC02] text-white",
+                              gs === "marked" && "border-[#CE82FF] bg-[#CE82FF] text-white rounded-full",
+                              gs === "answered-marked" && "border-[#CE82FF] bg-[#CE82FF] text-white rounded-full",
+                              i === index && "ring-4 ring-[#1CB0F6]/50 ring-offset-2 ring-offset-card z-10 border-[#1CB0F6]"
+                            )}
+                          >
+                            {i + 1}
+                            {gs === "answered-marked" && (
+                              <span className="absolute bottom-0 right-0 size-2 bg-[#58CC02] rounded-full border-[1.5px] border-background" />
+                            )}
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ol>
+                </div>
+              ))}
+            </div>
+            
+            {/* Mobile Legend */}
+            <div className="flex flex-col items-end font-mono text-[10px] font-bold text-[#4B5563] px-2 pr-4 leading-tight mt-1">
+              <span>marked: {statusCounts.mrk + statusCounts.ansMrk}</span>
+              <span>done: {statusCounts.ans + statusCounts.ansMrk}</span>
+              <span>not attemp: {statusCounts.notAns + statusCounts.notVis}</span>
+            </div>
           </div>
         </aside>
       </div>

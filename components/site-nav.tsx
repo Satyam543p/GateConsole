@@ -12,7 +12,10 @@ import {
   Settings,
   Flame,
   Target,
+  UserCircle2
 } from "lucide-react"
+import { useSettings } from "@/lib/storage/hooks"
+import { EXAMS, GATE_DOMAINS } from "@/lib/exams/registry"
 
 const NAV_ITEMS = [
   { href: "/", label: "Today", icon: Home },
@@ -24,9 +27,15 @@ const NAV_ITEMS = [
 export function SiteNav() {
   const pathname = usePathname()
   const [isExpanded, setIsExpanded] = useState(false)
+  const { settings } = useSettings()
 
   // Hide nav during active test taking
   if (/^\/tests\/[^/]+$/.test(pathname)) return null
+
+  const currentProfile = settings.profile
+  const examName = EXAMS.find(e => e.id === currentProfile?.exam)?.name || "GATE"
+  const domainName = GATE_DOMAINS.find(d => d.id === currentProfile?.domain)?.name || ""
+  const displayExam = currentProfile?.exam === "gate" && domainName ? `${examName} — ${domainName}` : examName
 
   return (
     <>
@@ -83,7 +92,23 @@ export function SiteNav() {
             })}
           </nav>
           
-          <div className="px-3 mt-auto">
+          <div className="px-3 mt-auto flex flex-col gap-2">
+            {currentProfile && (
+              <div className={cn(
+                "flex items-center gap-4 px-3 py-2 rounded-[12px] border-[2px] border-[#1F2937] bg-[#F3F4F6] transition-all duration-150 overflow-hidden mb-1",
+                isExpanded ? "w-full justify-start" : "justify-center"
+              )}>
+                <UserCircle2 className="size-5 shrink-0 text-[#1F2937]" />
+                <div className={cn(
+                  "flex flex-col whitespace-nowrap transition-opacity duration-150",
+                  isExpanded ? "opacity-100" : "opacity-0 w-0 hidden"
+                )}>
+                  <span className="text-[12px] font-black text-[#1F2937] leading-none">{currentProfile.name}</span>
+                  <span className="text-[10px] font-bold text-secondary-text mt-0.5 max-w-[100px] truncate" title={displayExam}>{displayExam}</span>
+                </div>
+              </div>
+            )}
+
             <Link
               href="/settings"
               title="Settings"
@@ -107,7 +132,7 @@ export function SiteNav() {
       </aside>
 
       {/* MOBILE BOTTOM TAB BAR (Hidden on Desktop) */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 h-[60px] bg-white border-t-[3px] border-[#1F2937] z-50 flex items-center justify-around px-2 pb-safe">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 h-[65px] bg-white/90 backdrop-blur-md border-t-[2px] border-[#1F2937]/10 z-50 flex items-center justify-around px-2 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
         {[...NAV_ITEMS, { href: "/settings", label: "Settings", icon: Settings }].map((item) => {
           const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
           const Icon = item.icon
@@ -117,12 +142,19 @@ export function SiteNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors",
-                isActive ? "text-primary" : "text-[#94A3B8] hover:text-primary-text"
+                "relative flex flex-col items-center justify-center w-full h-full space-y-1.5 transition-all duration-200 active:scale-95",
+                isActive ? "text-primary" : "text-[#94A3B8] hover:text-[#64748B]"
               )}
             >
-              <Icon className={cn("size-[22px]", isActive && "text-primary")} />
-              <span className="text-[10px] font-medium tracking-tight whitespace-nowrap">
+              <div className={cn(
+                "absolute top-0 inset-x-0 h-1 bg-primary rounded-b-full transition-transform duration-300 origin-top",
+                isActive ? "scale-y-100" : "scale-y-0"
+              )} />
+              <Icon className={cn("size-[24px] mt-1 transition-all duration-300", isActive && "text-primary drop-shadow-sm")} strokeWidth={isActive ? 2.5 : 2} />
+              <span className={cn(
+                "text-[10px] font-bold tracking-tight whitespace-nowrap transition-all duration-300",
+                isActive ? "text-primary" : "text-[#94A3B8]"
+              )}>
                 {item.label === "Concept Map" ? "Map" : item.label}
               </span>
             </Link>

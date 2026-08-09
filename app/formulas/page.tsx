@@ -14,8 +14,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Search, Printer, Eye, EyeOff, Sparkles, Filter } from "lucide-react"
-import { CONCEPTS as CURATED_CONCEPTS } from "@/lib/exams/gate-cse/concepts"
-import { useCollection, useQuestionBank, useAttempts } from "@/lib/storage/hooks"
+import { useCollection, useQuestionBank, useAttempts, useConcepts } from "@/lib/storage/hooks"
 import { COLLECTIONS } from "@/lib/storage/store"
 import { deriveMasteryState } from "@/lib/analytics/graph-selectors"
 import type { Concept } from "@/lib/domain/types"
@@ -25,6 +24,7 @@ export default function FormulasPage() {
   const { attempts } = useAttempts()
   const { data: srsCards } = useCollection(COLLECTIONS.srsCards)
   const { questionMap } = useQuestionBank()
+  const CURATED_CONCEPTS = useConcepts()
 
   const [selectedSubject, setSelectedSubject] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
@@ -33,12 +33,12 @@ export default function FormulasPage() {
 
   // Filter concepts that contain formulas
   const formulaConcepts = useMemo(() => {
-    return CURATED_CONCEPTS.filter((c) => Boolean(c.formula))
-  }, [])
+    return CURATED_CONCEPTS.filter((c: any) => Boolean(c.formula))
+  }, [CURATED_CONCEPTS])
 
   // Filtered formula list based on search, subject, and shaky state
   const filteredFormulas = useMemo(() => {
-    return formulaConcepts.filter((c) => {
+    return formulaConcepts.filter((c: any) => {
       if (selectedSubject !== "all" && c.subjectId !== selectedSubject) return false
 
       if (searchQuery) {

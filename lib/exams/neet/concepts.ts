@@ -1,0 +1,92 @@
+export const CONCEPTS = [
+  // PHYSICS
+  {
+    id: "neet-concept-kinematics-eq",
+    subjectId: "Physics",
+    chapterId: "neet-phy-mechanics",
+    label: "Equations of Kinematics",
+    summary: "Equations relating displacement, velocity, acceleration, and time for constant acceleration.",
+    importance: "high",
+    category: "Mechanics",
+    formula: "v = u + at, s = ut + \\frac{1}{2}at^2, v^2 = u^2 + 2as",
+    complexity: "O(1)",
+    commonTraps: ["Using these equations when acceleration is NOT constant"],
+  },
+  {
+    id: "neet-concept-lens-maker",
+    subjectId: "Physics",
+    chapterId: "neet-phy-optics",
+    label: "Lens Maker's Formula",
+    summary: "Relates the focal length of a lens to its refractive index and radii of curvature.",
+    importance: "high",
+    category: "Optics",
+    formula: "\\frac{1}{f} = (\\mu - 1) \\left( \\frac{1}{R_1} - \\frac{1}{R_2} \\right)",
+    commonTraps: ["Incorrect sign convention for R1 and R2"],
+  },
+
+  // CHEMISTRY
+  {
+    id: "neet-concept-le-chatelier",
+    subjectId: "Chemistry",
+    chapterId: "neet-chem-physical",
+    label: "Le Chatelier's Principle",
+    summary: "When a system at equilibrium is disturbed, the system shifts to counteract the disturbance.",
+    importance: "high",
+    category: "Physical Chemistry",
+    commonTraps: ["Adding an inert gas at constant volume does not change equilibrium"],
+  },
+  {
+    id: "neet-concept-markovnikov",
+    subjectId: "Chemistry",
+    chapterId: "neet-chem-organic",
+    label: "Markovnikov's Rule",
+    summary: "In addition reactions of HX to alkenes, the H adds to the carbon with more hydrogens.",
+    importance: "high",
+    category: "Organic Chemistry",
+    commonTraps: ["Forgetting the peroxide effect (Anti-Markovnikov) for HBr"],
+  },
+
+  // BOTANY
+  {
+    id: "neet-concept-photosynthesis",
+    subjectId: "Botany",
+    chapterId: "neet-bot-physio",
+    label: "C3 vs C4 Pathway",
+    summary: "Different pathways of carbon fixation in plants. C4 plants avoid photorespiration by spatial separation.",
+    importance: "high",
+    category: "Plant Physiology",
+    commonTraps: ["Confusing the primary CO2 acceptor (RuBP in C3 vs PEP in C4)"],
+  },
+  {
+    id: "neet-concept-mendel",
+    subjectId: "Botany",
+    chapterId: "neet-bot-genetics",
+    label: "Mendelian Inheritance",
+    summary: "Laws of segregation and independent assortment governing trait inheritance.",
+    importance: "high",
+    category: "Genetics",
+    commonTraps: ["Not recognizing incomplete dominance or co-dominance ratios"],
+  },
+
+  // ZOOLOGY
+  {
+    id: "neet-concept-cardiac-cycle",
+    subjectId: "Zoology",
+    chapterId: "neet-zoo-human",
+    label: "Cardiac Cycle",
+    summary: "The sequence of mechanical and electrical events that repeats with every heartbeat.",
+    importance: "high",
+    category: "Human Physiology",
+    commonTraps: ["Confusing systole (contraction) with diastole (relaxation) durations"],
+  },
+  {
+    id: "neet-concept-pcr",
+    subjectId: "Zoology",
+    chapterId: "neet-zoo-biotech",
+    label: "Polymerase Chain Reaction (PCR)",
+    summary: "Technique used to amplify a single copy or a few copies of a piece of DNA.",
+    importance: "high",
+    category: "Biotechnology",
+    commonTraps: ["Forgetting the order of steps: Denaturation, Annealing, Extension"],
+  },
+]

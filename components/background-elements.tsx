@@ -13,7 +13,7 @@ export function BackgroundElements() {
   if (!mounted) return null
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-100">
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-20 md:opacity-100">
       {/* Floating shapes with coding icons */}
       
       {/* Top Right - Database */}
