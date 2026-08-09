@@ -188,13 +188,35 @@ export function getAllTests(): TestDefinition[] {
   ]
 
   const chapterTests: TestDefinition[] = []
+  const subjectTests: TestDefinition[] = []
   
-  // We need to iterate over all exams to find all chapters
+  // We need to iterate over all exams to find all chapters and subjects
   const allExamIds = ["gate-cse", "jee", "neet", "gate-ece", "gate-me", "gate-ce", "gate-ee"]
   
   for (const examId of allExamIds) {
     const subjects = getSubjectsForExam(examId)
     for (const sub of subjects) {
+      // 1. Auto-generate subject drills
+      const subjTestId = `subj-${sub.id}`
+      if (!explicitTests.some(t => t.id === subjTestId) && !subjectTests.some(t => t.id === subjTestId)) {
+        const questionIds = allQuestions
+          .filter(q => q.subject === sub.name)
+          .map(q => q.id)
+          
+        if (questionIds.length > 0) {
+          subjectTests.push({
+            id: subjTestId,
+            title: `${sub.name} Drill`,
+            kind: "subject",
+            subject: sub.name,
+            durationMinutes: 30,
+            description: `Targeted practice on ${sub.name}.`,
+            questionIds,
+          })
+        }
+      }
+
+      // 2. Auto-generate chapter drills
       if (sub.chapters) {
         for (const ch of sub.chapters) {
           // If a test with this chapter ID already exists explicitly, skip
@@ -220,7 +242,7 @@ export function getAllTests(): TestDefinition[] {
     }
   }
 
-  return [...explicitTests, ...chapterTests]
+  return [...explicitTests, ...chapterTests, ...subjectTests]
 }
 
 export function getTest(testId: string): TestDefinition | undefined {

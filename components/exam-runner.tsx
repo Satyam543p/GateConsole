@@ -25,8 +25,16 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
   const { questionMap, loading } = useQuestionBank()
 
   const questions = useMemo(() => {
-    return test.questionIds.map((id) => questionMap.get(id)).filter((q): q is NonNullable<typeof q> => Boolean(q))
-  }, [test.questionIds, questionMap])
+    let baseQs = test.questionIds.map((id) => questionMap.get(id)).filter((q): q is NonNullable<typeof q> => Boolean(q))
+    
+    // Fallback: If no explicit question IDs matched (e.g. due to cross-exam test ID sharing like 'subj-general-aptitude')
+    // and it's a subject drill, just pull all questions for this subject from the local active exam bank.
+    if (baseQs.length === 0 && test.kind === "subject" && test.subject) {
+      baseQs = Array.from(questionMap.values()).filter(q => q.subject === test.subject)
+    }
+    
+    return baseQs
+  }, [test, questionMap])
 
   const [started, setStarted] = useState(false)
   const [index, setIndex] = useState(0)
