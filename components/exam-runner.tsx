@@ -26,11 +26,18 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
 
   const questions = useMemo(() => {
     let baseQs = test.questionIds.map((id) => questionMap.get(id)).filter((q): q is NonNullable<typeof q> => Boolean(q))
+    console.log("[ExamRunner] Initial match count:", baseQs.length, "Test ID:", test.id, "Test kind:", test.kind, "Test subject:", test.subject)
     
     // Fallback: If no explicit question IDs matched (e.g. due to cross-exam test ID sharing like 'subj-general-aptitude')
     // and it's a subject drill, just pull all questions for this subject from the local active exam bank.
-    if (baseQs.length === 0 && test.kind === "subject" && test.subject) {
+    // Note: We check test.id.includes("subj-") because test.kind gets overwritten by ?mode=practice in the URL!
+    if (baseQs.length === 0 && test.id.includes("subj-") && test.subject) {
       baseQs = Array.from(questionMap.values()).filter(q => q.subject === test.subject)
+      console.log("[ExamRunner] Fallback executed. Found questions matching subject:", baseQs.length)
+      if (baseQs.length === 0) {
+        console.log("[ExamRunner] Fallback failed to find any questions! First 5 local subjects available in questionMap:", 
+          Array.from(new Set(Array.from(questionMap.values()).map(q => q.subject))).slice(0, 5))
+      }
     }
     
     return baseQs
