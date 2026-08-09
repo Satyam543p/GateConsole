@@ -106,7 +106,7 @@ export function KeyboardShortcutsModal({
           <button
             type="button"
             onClick={closeModal}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors p-2 -m-2"
           >
             <X className="size-5" />
           </button>

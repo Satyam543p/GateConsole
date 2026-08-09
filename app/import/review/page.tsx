@@ -158,7 +158,7 @@ export default function ReviewPage() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-dvh">
       <div className="mx-auto max-w-[1600px] px-4 py-12 md:px-8">
         {/* Header */}
         <div className="border-b border-border pb-8 flex items-end justify-between flex-wrap gap-4">
@@ -179,14 +179,14 @@ export default function ReviewPage() {
             <button
               type="button"
               onClick={() => setShowCheatsheet(true)}
-              className="border border-border hover:border-primary px-3 py-1.5 font-mono text-[11px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+              className="border border-border hover:border-primary px-3 py-1.5 min-h-11 font-mono text-[11px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
             >
               <Keyboard className="size-4" aria-hidden="true" />
               Keyboard Shortcuts (?)
             </button>
             <Link
               href="/import"
-              className="border border-border hover:border-primary bg-primary/5 px-3 py-1.5 font-mono text-[11px] text-primary transition-colors"
+              className="border border-border hover:border-primary bg-primary/5 px-3 py-1.5 min-h-11 font-mono text-[11px] text-primary transition-colors"
             >
               Go to Importer
             </Link>
@@ -462,7 +462,7 @@ export default function ReviewPage() {
                       <button
                         type="button"
                         onClick={handleApprove}
-                        className="inline-flex items-center gap-1.5 border border-primary bg-primary px-4 py-2 font-mono text-[11px] text-primary-foreground tracking-wide"
+                        className="inline-flex items-center gap-1.5 border border-primary bg-primary px-4 py-2 min-h-11 font-mono text-[11px] text-primary-foreground tracking-wide"
                         title="Press 'A' key"
                       >
                         <Check className="size-3.5" aria-hidden="true" />
@@ -471,7 +471,7 @@ export default function ReviewPage() {
                       <button
                         type="button"
                         onClick={handleReject}
-                        className="inline-flex items-center gap-1.5 border border-destructive bg-destructive/10 text-destructive px-4 py-2 font-mono text-[11px] tracking-wide hover:bg-destructive/20 transition-colors"
+                        className="inline-flex items-center gap-1.5 border border-destructive bg-destructive/10 text-destructive px-4 py-2 min-h-11 font-mono text-[11px] tracking-wide hover:bg-destructive/20 transition-colors"
                         title="Press 'R' key"
                       >
                         <Trash2 className="size-3.5" aria-hidden="true" />
@@ -480,7 +480,7 @@ export default function ReviewPage() {
                       <button
                         type="button"
                         onClick={() => setIsEditing(true)}
-                        className="inline-flex items-center gap-1.5 border border-border px-3 py-2 font-mono text-[11px] text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-1.5 border border-border px-3 py-2 min-h-11 font-mono text-[11px] text-muted-foreground hover:border-foreground hover:text-foreground transition-colors"
                         title="Press 'E' key"
                       >
                         <Edit className="size-3.5" aria-hidden="true" />
@@ -503,7 +503,7 @@ export default function ReviewPage() {
                   <button
                     type="button"
                     onClick={() => navigate(-1)}
-                    className="flex-1 inline-flex items-center justify-center gap-1 border border-border py-2 font-mono text-[11px] text-muted-foreground hover:border-foreground hover:text-foreground"
+                    className="flex-1 inline-flex items-center justify-center gap-1 border border-border py-2 min-h-11 font-mono text-[11px] text-muted-foreground hover:border-foreground hover:text-foreground"
                     title="Press Left Arrow"
                   >
                     <ChevronLeft className="size-4" aria-hidden="true" />
@@ -512,7 +512,7 @@ export default function ReviewPage() {
                   <button
                     type="button"
                     onClick={() => navigate(1)}
-                    className="flex-1 inline-flex items-center justify-center gap-1 border border-border py-2 font-mono text-[11px] text-muted-foreground hover:border-foreground hover:text-foreground"
+                    className="flex-1 inline-flex items-center justify-center gap-1 border border-border py-2 min-h-11 font-mono text-[11px] text-muted-foreground hover:border-foreground hover:text-foreground"
                     title="Press Right Arrow"
                   >
                     Next

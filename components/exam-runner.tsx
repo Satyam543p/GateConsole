@@ -296,7 +296,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center font-mono text-[11px] text-muted-foreground">
+      <div className="flex h-dvh items-center justify-center font-mono text-[11px] text-muted-foreground">
         Loading question bank…
       </div>
     )
@@ -379,12 +379,12 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
 
   /* ================= exam screen ================= */
   return (
-    <div className="flex min-h-screen flex-col relative z-10">
+    <div className="flex min-h-dvh flex-col relative z-10">
       {/* top bar */}
       <header className="sticky top-0 z-30 border-b-3 border-border bg-card shadow-sm">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-y-3 gap-x-4 px-4 py-3 md:px-8">
           <div className="min-w-0 flex-1 md:flex-none">
-            <p className="truncate font-bold text-sm tracking-wide text-foreground">{test.title}</p>
+            <p className="truncate font-bold text-sm tracking-wide text-foreground" title={test.title}>{test.title}</p>
             <p className="font-mono text-[11px] font-semibold tabular-nums text-muted-foreground">
               {answeredCount}/{questions.length} answered
               {markedCount > 0 && <span className="text-[#CE82FF]"> · {markedCount} flagged</span>}
@@ -397,7 +397,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
               type="button"
               onClick={() => setShowCalc(!showCalc)}
               className={cn(
-                "flex items-center justify-center size-8 md:size-auto md:px-3 md:py-1.5 md:gap-1.5 border-2 rounded-xl transition-colors font-bold",
+                "flex items-center justify-center size-11 md:size-auto md:px-3 md:py-1.5 md:gap-1.5 border-2 rounded-xl transition-colors font-bold",
                 showCalc
                   ? "border-[#1CB0F6] bg-[#1CB0F6]/10 text-[#1CB0F6]"
                   : "border-border bg-background text-secondary-text hover:text-foreground"
@@ -410,7 +410,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
               type="button"
               onClick={() => setShowScratchpad(!showScratchpad)}
               className={cn(
-                "flex items-center justify-center size-8 md:size-auto md:px-3 md:py-1.5 md:gap-1.5 border-2 rounded-xl transition-colors font-bold",
+                "flex items-center justify-center size-11 md:size-auto md:px-3 md:py-1.5 md:gap-1.5 border-2 rounded-xl transition-colors font-bold",
                 showScratchpad
                   ? "border-[#FF9600] bg-[#FF9600]/10 text-[#FF9600]"
                   : "border-border bg-background text-secondary-text hover:text-foreground"
@@ -486,7 +486,10 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                     </span>
                   )}
                 </span>
-                <span className="truncate font-mono text-[12px] font-bold text-muted-foreground ml-2">
+                <span
+                  className="truncate font-mono text-[12px] font-bold text-muted-foreground ml-2"
+                  title={`${current.subject}${current.topic ? ` · ${current.topic}` : ""}`}
+                >
                   {current.subject}
                   {current.topic ? ` · ${current.topic}` : ""}
                 </span>
@@ -496,7 +499,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                   onClick={() => setMarked((m) => ({ ...m, [current.id]: !m[current.id] }))}
                   aria-pressed={!!marked[current.id]}
                   className={cn(
-                    "ml-auto inline-flex shrink-0 items-center gap-1.5 border-2 rounded-xl px-3 py-1.5 font-bold text-xs tracking-wide transition-colors shadow-neo-sm",
+                    "ml-auto inline-flex shrink-0 items-center gap-1.5 border-2 rounded-xl px-3 py-1.5 font-bold text-xs tracking-wide transition-colors shadow-neo-sm min-h-11",
                     marked[current.id]
                       ? "border-[#CE82FF] bg-[#CE82FF] text-white"
                       : "border-border bg-white text-foreground hover:-translate-y-0.5",
@@ -687,7 +690,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                 <button
                   type="button"
                   onClick={() => setConfirmSubmit(true)}
-                  className="md:hidden shrink-0 neo-btn bg-primary px-4 py-2 font-bold text-sm tracking-wide text-primary-foreground ml-2"
+                  className="md:hidden shrink-0 neo-btn bg-primary px-4 py-2 min-h-11 font-bold text-sm tracking-wide text-primary-foreground ml-2"
                 >
                   {test.kind === "practice" ? "Finish" : "Submit"}
                 </button>
@@ -788,7 +791,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                             aria-current={i === index ? "true" : undefined}
                             aria-label={`Question ${i + 1}, ${gs}`}
                             className={cn(
-                              "flex size-9 shrink-0 items-center justify-center border-2 rounded-lg font-mono text-[13px] font-bold tabular-nums transition-all relative shadow-neo-sm hover:-translate-y-0.5",
+                              "flex size-11 shrink-0 items-center justify-center border-2 rounded-lg font-mono text-[13px] font-bold tabular-nums transition-all relative shadow-neo-sm hover:-translate-y-0.5",
                               gs === "not-visited" && "border-border bg-white text-muted-foreground",
                               gs === "not-answered" && "border-[#FF4B4B] bg-[#FFE5E5] text-[#FF4B4B]",
                               gs === "answered" && "border-[#58CC02] bg-[#58CC02] text-white",

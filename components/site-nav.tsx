@@ -14,7 +14,7 @@ import {
   Target,
   UserCircle2
 } from "lucide-react"
-import { useSettings } from "@/lib/storage/hooks"
+import { useSettings, useDailyChallenge } from "@/lib/storage/hooks"
 import { EXAMS, GATE_DOMAINS } from "@/lib/exams/registry"
 
 const NAV_ITEMS = [
@@ -28,6 +28,7 @@ export function SiteNav() {
   const pathname = usePathname()
   const [isExpanded, setIsExpanded] = useState(false)
   const { settings } = useSettings()
+  const { streak: dailyStreak, loading: dailyLoading } = useDailyChallenge()
 
   // Hide nav during active test taking
   if (/^\/tests\/[^/]+$/.test(pathname)) return null
@@ -60,7 +61,7 @@ export function SiteNav() {
                  "font-black text-[14px] whitespace-nowrap transition-all overflow-hidden",
                  isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
                )}>
-                 3 Days
+                 {dailyLoading ? "…" : `${dailyStreak} Day${dailyStreak === 1 ? "" : "s"}`}
                </span>
              </div>
           </div>

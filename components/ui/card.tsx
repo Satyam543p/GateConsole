@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 
 const Card = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { accentBorder?: 'blue' | 'pink' }
+  React.HTMLAttributes<HTMLDivElement> & { accentBorder?: 'blue' | 'pink' | 'green' }
 >(({ className, accentBorder, ...props }, ref) => {
   return (
     <div
@@ -12,6 +12,7 @@ const Card = React.forwardRef<
         "neo-card transition-all duration-200 ease-out",
         accentBorder === 'blue' && "border-[#1CB0F6]",
         accentBorder === 'pink' && "border-[#CE82FF]",
+        accentBorder === 'green' && "border-[#58CC02]",
         className
       )}
       {...props}

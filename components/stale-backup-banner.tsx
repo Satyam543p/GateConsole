@@ -64,7 +64,7 @@ export function StaleBackupBanner() {
           type="button"
           aria-label="Dismiss backup reminder"
           onClick={dismiss}
-          className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+          className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-2 -m-2"
         >
           <X className="size-3.5" aria-hidden="true" />
         </button>

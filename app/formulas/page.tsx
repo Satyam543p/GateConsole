@@ -76,7 +76,7 @@ export default function FormulasPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-dvh bg-background">
       {/* Non-printable Control Header */}
       <header className="border-b border-border bg-card p-6 print:hidden">
         <div className="mx-auto max-w-[1600px] flex flex-wrap items-center justify-between gap-4">
@@ -93,7 +93,7 @@ export default function FormulasPage() {
               type="button"
               onClick={() => setIsBlurMode(!isBlurMode)}
               className={cn(
-                "flex items-center gap-2 border px-3 py-2 transition-colors",
+                "flex items-center gap-2 border px-3 py-2 min-h-11 transition-colors",
                 isBlurMode
                   ? "border-amber-500 bg-amber-500/10 text-amber-400 font-semibold"
                   : "border-border bg-background text-muted-foreground hover:text-foreground"
@@ -108,7 +108,7 @@ export default function FormulasPage() {
               type="button"
               onClick={() => setShakyOnly(!shakyOnly)}
               className={cn(
-                "flex items-center gap-2 border px-3 py-2 transition-colors",
+                "flex items-center gap-2 border px-3 py-2 min-h-11 transition-colors",
                 shakyOnly
                   ? "border-primary bg-primary/10 text-primary font-semibold"
                   : "border-border bg-background text-muted-foreground hover:text-foreground"
@@ -122,7 +122,7 @@ export default function FormulasPage() {
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-2 border border-primary bg-primary px-4 py-2 text-primary-foreground font-semibold uppercase tracking-wide hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 border border-primary bg-primary px-4 py-2 min-h-11 text-primary-foreground font-semibold uppercase tracking-wide hover:opacity-90 transition-opacity"
             >
               <Printer className="size-3.5" />
               Print Cheat Sheet
@@ -139,14 +139,14 @@ export default function FormulasPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search formulas by concept or LaTeX expression..."
-              className="w-full border border-border bg-background pl-8 pr-3 py-1.5 font-mono text-[11px] outline-none focus:border-primary"
+              className="w-full border border-border bg-background pl-8 pr-3 py-2.5 font-mono text-[11px] outline-none focus:border-primary"
             />
           </div>
 
           <select
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
-            className="border border-border bg-background px-3 py-1.5 font-mono text-[11px] outline-none focus:border-primary"
+            className="border border-border bg-background px-3 py-2.5 font-mono text-[11px] outline-none focus:border-primary"
           >
             <option value="all">All Subjects ({formulaConcepts.length} formulas)</option>
             {Array.from(new Set(formulaConcepts.map((c) => c.subjectId))).map((sub) => (

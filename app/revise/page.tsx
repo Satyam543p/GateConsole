@@ -128,7 +128,7 @@ export default function RevisePage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-background">
+    <main className="min-h-dvh flex flex-col bg-background">
       <div className="mx-auto max-w-4xl w-full px-4 py-10 md:px-8 flex-1 flex flex-col justify-between space-y-8">
         {/* Header & Progress */}
         <div className="border-b border-border pb-6">

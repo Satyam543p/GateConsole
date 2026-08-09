@@ -50,7 +50,7 @@ export function ProfilePanel() {
             {examName} {currentProfile?.exam === "gate" && domainName ? `— ${domainName}` : ""}
           </p>
         </div>
-        <Button onClick={() => setIsEditing(true)} variant="outline" className="mt-4 border-[2px] border-[#1F2937] text-[13px] font-bold uppercase tracking-wider h-10 px-4">
+        <Button onClick={() => setIsEditing(true)} variant="outline" className="mt-4 border-[2px] border-[#1F2937] text-[13px] font-bold uppercase tracking-wider h-11 px-4">
           Edit Profile
         </Button>
       </div>
@@ -75,7 +75,7 @@ export function ProfilePanel() {
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
-            className="w-full h-10 px-3 rounded-lg border-[2px] border-[#1F2937] bg-white text-[14px] font-bold"
+            className="w-full h-11 px-3 rounded-lg border-[2px] border-[#1F2937] bg-white text-[14px] font-bold"
           />
         </div>
         
@@ -87,7 +87,7 @@ export function ProfilePanel() {
               setExam(e.target.value)
               if (e.target.value !== "gate") setDomain("")
             }}
-            className="w-full h-10 px-3 rounded-lg border-[2px] border-[#1F2937] bg-white text-[14px] font-bold appearance-none"
+            className="w-full h-11 px-3 rounded-lg border-[2px] border-[#1F2937] bg-white text-[14px] font-bold appearance-none"
           >
             {EXAMS.map(e => (
               <option key={e.id} value={e.id}>{e.name}</option>
@@ -101,7 +101,7 @@ export function ProfilePanel() {
             <select 
               value={domain}
               onChange={e => setDomain(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border-[2px] border-[#1F2937] bg-white text-[14px] font-bold appearance-none"
+              className="w-full h-11 px-3 rounded-lg border-[2px] border-[#1F2937] bg-white text-[14px] font-bold appearance-none"
             >
               <option value="" disabled>Select domain...</option>
               {GATE_DOMAINS.map(d => (
@@ -113,10 +113,10 @@ export function ProfilePanel() {
       </div>
 
       <div className="flex gap-3 pt-2">
-        <Button onClick={handleSave} disabled={!isValid} className="bg-[#1CB0F6] hover:bg-[#1CB0F6]/90 text-white border-[2px] border-[#1F2937] shadow-neo-sm h-10 px-6 font-bold">
+        <Button onClick={handleSave} disabled={!isValid} className="bg-[#1CB0F6] hover:bg-[#1CB0F6]/90 text-white border-[2px] border-[#1F2937] shadow-neo-sm h-11 px-6 font-bold">
           Save Changes
         </Button>
-        <Button onClick={() => setIsEditing(false)} variant="ghost" className="h-10 px-4 font-bold text-secondary-text hover:text-primary-text">
+        <Button onClick={() => setIsEditing(false)} variant="ghost" className="h-11 px-4 font-bold text-secondary-text hover:text-primary-text">
           Cancel
         </Button>
       </div>

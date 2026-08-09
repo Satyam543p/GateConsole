@@ -239,7 +239,7 @@ export default function ImportPage() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-dvh">
       <div className="mx-auto max-w-[1600px] px-4 py-12 md:px-8">
         {/* Header */}
         <div className="border-b border-border pb-8 flex items-end justify-between flex-wrap gap-4">
@@ -257,7 +257,7 @@ export default function ImportPage() {
           </div>
           <Link
             href="/import/review"
-            className="border border-border hover:border-primary px-3 py-1.5 font-mono text-[11px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+            className="border border-border hover:border-primary px-3 py-1.5 min-h-11 font-mono text-[11px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
           >
             Open verification queue
           </Link>
@@ -328,7 +328,7 @@ export default function ImportPage() {
                   type="button"
                   disabled={!rawText.trim()}
                   onClick={() => handleParse(rawText)}
-                  className="inline-flex items-center gap-1.5 border border-primary bg-primary px-4 py-2 font-mono text-[11px] tracking-wide text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 border border-primary bg-primary px-4 py-2 min-h-11 font-mono text-[11px] tracking-wide text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   <Upload className="size-3.5" aria-hidden="true" />
                   Parse &amp; validate
@@ -338,7 +338,7 @@ export default function ImportPage() {
                   type="button"
                   disabled={!parsedData}
                   onClick={handleAutoRepair}
-                  className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 font-mono text-[11px] text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 min-h-11 font-mono text-[11px] text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-40"
                   title="Trim inputs, normalise option letters, coerce strings and check suggestions"
                 >
                   <RefreshCw className="size-3.5" aria-hidden="true" />

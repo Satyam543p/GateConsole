@@ -44,8 +44,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   colorScheme: 'light',
   themeColor: '#FAFBFF',
 }
@@ -63,10 +61,10 @@ export default function RootLayout({
       lang="en"
       className={`bg-background ${_nunito.variable} ${_dmSans.variable}`}
     >
-      <body className="antialiased flex h-screen overflow-hidden bg-background text-primary-text font-sans relative">
+      <body className="antialiased flex h-dvh overflow-hidden bg-background text-primary-text font-sans relative">
         <BackgroundElements />
         <SiteNav />
-        <div className="flex-1 flex flex-col h-screen overflow-y-auto overflow-x-hidden relative bg-transparent z-10 md:ml-16 pb-[60px] md:pb-0">
+        <div className="flex-1 flex flex-col h-dvh overflow-y-auto overflow-x-hidden relative bg-transparent z-10 md:ml-16 pb-[60px] md:pb-0">
           <StaleBackupBanner />
           <KeyboardShortcutsModal />
           {children}

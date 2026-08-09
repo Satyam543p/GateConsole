@@ -58,7 +58,7 @@ function MapContent() {
   // VIEW 1: Select Subject
   if (!activeSubjectId) {
     return (
-      <main className="min-h-screen pt-12 pb-24 px-6 max-w-5xl mx-auto space-y-8 bg-[#FAFBFF]">
+      <main className="min-h-dvh pt-12 pb-24 px-6 max-w-5xl mx-auto space-y-8 bg-[#FAFBFF]">
         <header className="mb-8">
           <h1 className="text-[28px] font-heading font-bold text-primary-text flex items-center gap-3">
             <Network className="size-7 text-[#6C8EF2]" />
@@ -104,7 +104,7 @@ function MapContent() {
   // VIEW 2: Select Chapter (if the subject has chapters and no chapter is selected yet)
   if (hasChapters && !activeChapterId) {
     return (
-      <main className="min-h-screen pt-12 pb-24 px-6 max-w-5xl mx-auto space-y-8 bg-[#FAFBFF]">
+      <main className="min-h-dvh pt-12 pb-24 px-6 max-w-5xl mx-auto space-y-8 bg-[#FAFBFF]">
         <header className="mb-8">
           <button
             onClick={() => router.push('/map')}
@@ -121,7 +121,7 @@ function MapContent() {
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {activeSubject.chapters!.map(ch => {
+          {activeSubject!.chapters!.map(ch => {
             const count = allConcepts.filter(c => c.chapterId === ch.id || c.chapterId === ch.name).length
             return (
               <button
@@ -154,7 +154,7 @@ function MapContent() {
 
   // VIEW 3: Linear Feed of Concepts (Filtered by Subject or Chapter)
   return (
-    <main className="min-h-screen w-full relative bg-[#FAFBFF] overflow-x-hidden">
+    <main className="min-h-dvh w-full relative bg-[#FAFBFF] overflow-x-hidden">
       
       {/* Playful Background Elements */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-10">
@@ -290,7 +290,7 @@ function MapContent() {
                           <AlertTriangle className="size-5" strokeWidth={3} /> Exam Traps
                         </h3>
                         <ul className="space-y-3">
-                          {concept.commonTraps.map((trap, idx) => (
+                          {concept.commonTraps.map((trap: string, idx: number) => (
                             <li key={idx} className="flex gap-3 text-[15px] font-bold leading-relaxed">
                               <span className="text-white mt-1.5 size-2.5 rounded-full bg-white shrink-0" />
                               <span><Latex>{trap}</Latex></span>
@@ -342,7 +342,7 @@ function MapContent() {
 
 export default function MapPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FAFBFF] p-6">Loading Map...</div>}>
+    <Suspense fallback={<div className="min-h-dvh bg-[#FAFBFF] p-6">Loading Map...</div>}>
       <MapContent />
     </Suspense>
   )

@@ -8,8 +8,8 @@
 
 export type QuestionType = "MCQ" | "MSQ" | "NAT"
 
-/** GATE awards questions at either 1 or 2 marks. */
-export type Marks = 1 | 2
+/** GATE awards questions at either 1 or 2 marks; JEE/NEET add 4-mark questions. */
+export type Marks = 1 | 2 | 4
 
 export interface Question {
   /** Stable unique id. Convention: `<subject-slug>-<nnn>`, e.g. "algo-001". */
@@ -61,7 +61,7 @@ export interface TestDefinition {
   id: string
   title: string
   /** "subject" tests are single-subject drills; "mock" tests are full papers. */
-  kind: "subject" | "mock" | "practice" | "drill"
+  kind: "subject" | "mock" | "practice" | "drill" | "daily"
   /** Present on subject tests; omit for mocks. */
   subject?: string
   /** Total duration in minutes. GATE full paper is 180. */

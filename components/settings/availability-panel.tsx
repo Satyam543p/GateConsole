@@ -52,7 +52,7 @@ export function AvailabilityPanel() {
   const activeDaysCount = hours.filter(h => h > 0).length
 
   return (
-    <div className="p-6">
+    <div className="p-5 sm:p-6">
       <div className="mb-6 flex items-start gap-4">
         <div className="p-2.5 bg-[#F0F4FF] rounded-[10px]">
           <CalendarDays className="size-5 text-[#6C8EF2]" />
@@ -68,7 +68,7 @@ export function AvailabilityPanel() {
       </div>
 
       {/* 7-Day Circles */}
-      <div className="flex justify-between items-center bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] p-4 mb-6">
+      <div className="grid grid-cols-7 justify-items-center gap-0.5 sm:gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] p-3 sm:p-4 mb-6">
         {DAY_LABELS.map((label, i) => {
           const isActive = hours[i] > 0
           return (
@@ -76,13 +76,15 @@ export function AvailabilityPanel() {
               key={label}
               onClick={() => toggleDay(i)}
               disabled={loading}
+              aria-pressed={isActive}
+              aria-label={`${label} study day`}
               className={cn(
-                "flex flex-col items-center gap-2 transition-all outline-none group",
+                "flex flex-col items-center gap-1.5 transition-all outline-none group min-w-0",
                 isActive ? "opacity-100" : "opacity-60 hover:opacity-100"
               )}
             >
               <div className={cn(
-                "size-10 rounded-full flex items-center justify-center font-heading font-bold text-[14px] transition-all group-hover:scale-105",
+                "size-9 sm:size-11 rounded-full flex items-center justify-center font-heading font-bold text-[13px] sm:text-[14px] transition-all group-hover:scale-105",
                 isActive
                   ? "bg-[#6C8EF2] text-white shadow-[0_2px_8px_rgba(108,142,242,0.3)]"
                   : "bg-white text-muted-text border border-[#E2E8F0]"
@@ -90,7 +92,7 @@ export function AvailabilityPanel() {
                 {label[0]}
               </div>
               <span className={cn(
-                "text-[10px] uppercase tracking-wider font-semibold",
+                "text-[9px] sm:text-[10px] uppercase tracking-wider font-semibold",
                 isActive ? "text-[#6C8EF2]" : "text-muted-text"
               )}>
                 {label}
@@ -121,13 +123,13 @@ export function AvailabilityPanel() {
             type="date"
             value={newBlackout}
             onChange={(e) => setNewBlackout(e.target.value)}
-            className="flex-1 h-10 border border-[#E2E8F0] bg-white px-3 rounded-[8px] text-[13px] text-primary-text focus:border-[#6C8EF2] focus:ring-1 focus:ring-[#6C8EF2] outline-none transition-all"
+            className="flex-1 h-11 border border-[#E2E8F0] bg-white px-3 rounded-[8px] text-[13px] text-primary-text focus:border-[#6C8EF2] focus:ring-1 focus:ring-[#6C8EF2] outline-none transition-all"
           />
           <button
             type="button"
             onClick={addBlackout}
             disabled={!newBlackout || saving}
-            className="inline-flex items-center justify-center h-10 px-4 gap-2 bg-[#F0F4FF] text-[#6C8EF2] border-[1.5px] border-[#D0DAFE] rounded-[8px] font-heading font-semibold text-[13px] hover:bg-[#EEF1FE] transition-colors disabled:opacity-50"
+            className="inline-flex items-center justify-center h-11 px-4 gap-2 bg-[#F0F4FF] text-[#6C8EF2] border-[1.5px] border-[#D0DAFE] rounded-[8px] font-heading font-semibold text-[13px] hover:bg-[#EEF1FE] transition-colors disabled:opacity-50"
           >
             <Plus className="size-3.5 stroke-[3px]" /> Add
           </button>
@@ -144,7 +146,7 @@ export function AvailabilityPanel() {
                 <button
                   type="button"
                   onClick={() => removeBlackout(date)}
-                  className="text-[#94A3B8] hover:text-[#F87171] hover:bg-[#FFF0F5] p-1.5 rounded-md transition-colors"
+                  className="text-[#94A3B8] hover:text-[#F87171] hover:bg-[#FFF0F5] p-1.5 min-h-11 min-w-11 flex items-center justify-center rounded-md transition-colors"
                 >
                   <Trash2 className="size-4" />
                 </button>

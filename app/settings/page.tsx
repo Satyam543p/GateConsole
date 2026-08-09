@@ -13,10 +13,10 @@ export const metadata: Metadata = {
 
 export default function SettingsPage() {
   return (
-    <main className="min-h-screen pt-12 pb-24 px-4 md:px-6 max-w-3xl mx-auto space-y-6 bg-[#FAFBFF]">
-      
-      <header className="mb-8">
-        <h1 className="text-[28px] font-heading font-bold text-primary-text flex items-center gap-3">
+    <main className="min-h-dvh pt-8 md:pt-12 pb-24 px-4 md:px-6 max-w-3xl mx-auto space-y-6 bg-[#FAFBFF]">
+
+      <header className="mb-6 md:mb-8">
+        <h1 className="text-[26px] md:text-[28px] font-heading font-bold text-primary-text flex items-center gap-3">
           <SettingsIcon className="size-7 text-[#94A3B8]" />
           Settings
         </h1>

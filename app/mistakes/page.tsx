@@ -131,7 +131,7 @@ export default function MistakesPage() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-dvh">
       <div className="mx-auto max-w-[1600px] px-4 py-12 md:px-8">
         {/* Header */}
         <div className="border-b border-border pb-8 flex items-end justify-between flex-wrap gap-4">
@@ -205,7 +205,7 @@ export default function MistakesPage() {
                 type="button"
                 onClick={() => setGroupBy(mode)}
                 className={cn(
-                  "border px-3 py-1.5 transition-colors",
+                  "border px-3 py-1.5 min-h-11 transition-colors",
                   groupBy === mode
                     ? "border-primary bg-primary/10 text-primary font-semibold"
                     : "border-border bg-card text-muted-foreground hover:text-foreground"
@@ -278,7 +278,7 @@ export default function MistakesPage() {
                       type="button"
                       onClick={() => handleToggleResolved(m)}
                       className={cn(
-                        "border px-3 py-1 font-mono text-[10px] uppercase tracking-wide transition-colors shrink-0",
+                        "border px-3 py-1 min-h-11 font-mono text-[10px] uppercase tracking-wide transition-colors shrink-0",
                         m.resolved
                           ? "border-primary bg-primary/10 text-primary"
                           : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
@@ -298,7 +298,7 @@ export default function MistakesPage() {
                           type="button"
                           onClick={() => handleUpdateCause(m, c.value)}
                           className={cn(
-                            "border px-2 py-0.5 font-mono text-[10px] transition-colors",
+                            "border px-2 py-0.5 min-h-11 font-mono text-[10px] transition-colors",
                             m.cause === c.value
                               ? "border-primary bg-primary/10 text-primary font-semibold"
                               : "border-border text-muted-foreground hover:text-foreground"

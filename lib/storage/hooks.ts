@@ -7,12 +7,15 @@
  * No component imports localStorage directly after this file exists.
  */
 
-import { useCallback, useEffect, useState, useMemo } from "react"
-import type { AppSettings, StoredAttempt, Question } from "../domain/types"
+import { useCallback, useEffect, useState, useMemo, useRef } from "react"
+import type { AppSettings, StoredAttempt, Question, DailyChallenge } from "../domain/types"
 import { LOCAL_USER_ID, GATE_CSE_EXAM_ID, DEFAULT_SETTINGS } from "../domain/types"
 import { QUESTIONS } from "../exams/gate-cse/question-bank"
 import { getStore, COLLECTIONS } from "./store"
 import type { Collection, CollectionTypeMap, Query } from "./store"
+import { getTodayIsoDate, getDateOffsetIso, getDailyChallengeStreak, seedChallengeQuestionId } from "../analytics/selectors"
+import { isCorrect, scoreAttempt } from "../test-types"
+import type { Response } from "../test-types"
 
 // ─── Generic collection hook ──────────────────────────────────────────────────
 
@@ -88,7 +91,7 @@ export function useCollection<K extends Collection>(
   return { data, loading, error, put, remove, refresh: fetch }
 }
 
-import { getActiveExamId, getQuestions } from "../exams/registry"
+import { getActiveExamId, getQuestions, getSubjectsForExam } from "../exams/registry"
 
 // ─── useAttempts — backward-compatible replacement for lib/use-attempts.ts ───
 
@@ -231,5 +234,139 @@ export function useConcepts() {
   const { settings } = useSettings()
   const activeExamId = getActiveExamId(settings.profile)
   return useMemo(() => getConcepts(activeExamId), [activeExamId])
+}
+
+// ─── useDailyChallenge ────────────────────────────────────────────────────────
+
+export interface UseDailyChallengeResult {
+  record: DailyChallenge | null
+  question: Question | null
+  streak: number
+  loading: boolean
+  submit: (response: Response) => Promise<{ correct: boolean; streak: number }>
+  reroll: () => Promise<void>
+}
+
+/**
+ * Single source of truth for the Daily Challenge.
+ *
+ * - Seeds today's question once (same all day) via seedChallengeQuestionId.
+ * - Streak increments on a correct answer only; a wrong answer resets to 0.
+ * - The day locks after answering; reroll is only available before that.
+ * - Also records a kind:"daily" StoredAttempt so it flows into history/analytics.
+ */
+export function useDailyChallenge(): UseDailyChallengeResult {
+  const { settings } = useSettings()
+  const { questions, questionMap, loading: questionsLoading } = useQuestionBank()
+  const activeExamId = getActiveExamId(settings.profile)
+  const SUBJECTS = useMemo(() => getSubjectsForExam(activeExamId), [activeExamId])
+  const subjectProgress = useMemo(() => settings.subjectProgress || {}, [settings.subjectProgress])
+
+  const today = getTodayIsoDate()
+  const { data, loading: recordsLoading, put } = useCollection(COLLECTIONS.daily)
+
+  const todayRecord = useMemo(
+    () => data.find((r) => r.id === today) ?? null,
+    [data, today],
+  )
+
+  const question = useMemo(
+    () => (todayRecord ? questionMap.get(todayRecord.questionId) ?? null : null),
+    [todayRecord, questionMap],
+  )
+
+  // Seed today's challenge once per day, after questions are ready.
+  const seededFor = useRef<string | null>(null)
+  useEffect(() => {
+    if (questionsLoading || recordsLoading) return
+    if (todayRecord) return
+    if (seededFor.current === today) return
+    seededFor.current = today
+    const qid = seedChallengeQuestionId(questions, SUBJECTS, subjectProgress)
+    if (qid) {
+      void put({
+        userId: LOCAL_USER_ID,
+        examId: activeExamId,
+        id: today,
+        questionId: qid,
+        solved: false,
+        correct: null,
+        streak: 0,
+      } satisfies DailyChallenge)
+    }
+  }, [questionsLoading, recordsLoading, todayRecord, today, questions, SUBJECTS, subjectProgress, put, activeExamId])
+
+  const streak = useMemo(() => getDailyChallengeStreak(data, today), [data, today])
+
+  const submit = useCallback(
+    async (response: Response): Promise<{ correct: boolean; streak: number }> => {
+      if (!todayRecord || !question) return { correct: false, streak: 0 }
+      // Day locked once answered — return the stored outcome.
+      if (todayRecord.solved) {
+        return { correct: todayRecord.correct === true, streak: todayRecord.streak }
+      }
+
+      const correct = isCorrect(question, response)
+      const yesterday = data.find((r) => r.id === getDateOffsetIso(today, -1))
+      const nextStreak = correct ? (yesterday?.correct ? yesterday.streak : 0) + 1 : 0
+      const answeredAt = new Date().toISOString()
+
+      await put({
+        ...todayRecord,
+        solved: true,
+        correct,
+        streak: nextStreak,
+        answeredAt,
+      } satisfies DailyChallenge)
+
+      // Record a StoredAttempt (kind "daily") so it shows in history/analytics.
+      const result = scoreAttempt([question], { [question.id]: response })
+      void getStore().put(COLLECTIONS.attempts, {
+        userId: LOCAL_USER_ID,
+        examId: activeExamId,
+        id: newAttemptId(),
+        testId: `daily-${today}`,
+        testTitle: "Daily Challenge",
+        kind: "daily",
+        subject: question.subject,
+        questionIds: [question.id],
+        submittedAt: answeredAt,
+        durationSeconds: 0,
+        responses: { [question.id]: response },
+        timePerQuestion: {},
+        markedForReview: [],
+        scored: result.scored,
+        totalMarks: result.totalMarks,
+        correct: result.correct,
+        wrong: result.wrong,
+        skipped: result.skipped,
+      } satisfies StoredAttempt)
+
+      return { correct, streak: nextStreak }
+    },
+    [todayRecord, question, data, today, put, activeExamId],
+  )
+
+  const reroll = useCallback(async () => {
+    if (!todayRecord || todayRecord.solved) return
+    const currentId = todayRecord.questionId
+    let qid = seedChallengeQuestionId(questions, SUBJECTS, subjectProgress)
+    // Avoid instantly re-rolling onto the same question when alternatives exist.
+    if (qid === currentId && questions.length > 1) {
+      qid = seedChallengeQuestionId(questions, SUBJECTS, subjectProgress)
+    }
+    if (qid && qid !== currentId) {
+      await put({ ...todayRecord, questionId: qid } satisfies DailyChallenge)
+    }
+  }, [todayRecord, questions, SUBJECTS, subjectProgress, put])
+
+  return {
+    record: todayRecord,
+    question,
+    streak,
+    loading: recordsLoading || questionsLoading,
+    submit,
+    reroll,
+  }
 }
 

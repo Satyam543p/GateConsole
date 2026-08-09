@@ -136,7 +136,7 @@ export function TestHub() {
   const showSubjectSelection = (filter === "subject" || filter === "drill") && !selectedSubjectId
 
   return (
-    <main className="min-h-screen relative overflow-x-hidden bg-[#FAFBFF]">
+    <main className="min-h-dvh relative overflow-x-hidden bg-[#FAFBFF]">
       
       {/* Playful Background Elements */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-5">
@@ -174,7 +174,7 @@ export function TestHub() {
             onClick={() => handleFilterChange(value)}
             aria-pressed={filter === value}
             className={cn(
-              "px-5 py-2 rounded-[12px] font-heading font-black text-[14px] tracking-wide transition-all outline-none border-[2px] border-transparent uppercase",
+              "px-5 py-2 min-h-11 rounded-[12px] font-heading font-black text-[14px] tracking-wide transition-all outline-none border-[2px] border-transparent uppercase",
               filter === value
                 ? "bg-[#1CB0F6] text-white border-[#1F2937] shadow-neo-sm"
                 : "bg-transparent text-secondary-text hover:text-[#1F2937] hover:bg-gray-100 border-transparent",

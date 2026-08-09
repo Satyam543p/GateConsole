@@ -47,7 +47,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen relative overflow-x-hidden bg-[#FAFBFF]">
+    <main className="min-h-dvh relative overflow-x-hidden bg-[#FAFBFF]">
       
       {/* Playful Background Elements */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-5">
@@ -59,7 +59,7 @@ export default function HomePage() {
       </div>
 
       {currentState === "loading" && (
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-dvh flex items-center justify-center">
           <p className="font-bold text-secondary-text">Loading...</p>
         </div>
       )}

@@ -112,7 +112,7 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
         </p>
         <Link
           href="/tests"
-          className="mt-6 inline-flex items-center gap-1.5 border border-primary bg-primary px-4 py-2 font-mono text-[11px] tracking-wide text-primary-foreground"
+          className="mt-6 inline-flex items-center gap-1.5 border border-primary bg-primary px-4 py-2 min-h-11 font-mono text-[11px] tracking-wide text-primary-foreground"
         >
           Back to test centre
         </Link>
@@ -146,13 +146,13 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
     finalQuestions.length > 0 ? attempt.durationSeconds / finalQuestions.length : 0
 
   return (
-    <main className="min-h-screen relative z-10 bg-background pb-12">
+    <main className="min-h-dvh relative z-10 bg-background pb-12">
       <section className="relative overflow-hidden border-b-3 border-border">
         <div className="grid-lines absolute inset-0" aria-hidden="true" />
         <div className="relative mx-auto max-w-[1600px] px-4 py-10 md:px-8 md:py-14">
           <Link
             href="/progress"
-            className="inline-flex items-center gap-1.5 font-bold text-sm text-foreground hover:text-primary transition-colors border-2 border-transparent hover:border-border rounded-xl px-2 py-1"
+            className="inline-flex items-center gap-1.5 font-bold text-sm text-foreground hover:text-primary transition-colors border-2 border-transparent hover:border-border rounded-xl px-2 py-1 min-h-11"
           >
             <ChevronLeft className="size-4" aria-hidden="true" />
             All attempts
@@ -300,7 +300,7 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
                 onClick={() => setFilter(value)}
                 aria-pressed={filter === value}
                 className={cn(
-                  "border-2 rounded-xl px-3 py-1.5 font-mono text-xs font-bold tracking-wide transition-colors shadow-neo-sm hover:-translate-y-0.5 active:translate-y-0 active:shadow-none",
+                  "border-2 rounded-xl px-3 py-1.5 min-h-11 font-mono text-xs font-bold tracking-wide transition-colors shadow-neo-sm hover:-translate-y-0.5 active:translate-y-0 active:shadow-none",
                   filter === value
                     ? "border-[#1CB0F6] bg-[#1CB0F6] text-white"
                     : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-[#F3F4F6]",
@@ -343,7 +343,10 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
                   <span className="border-2 border-border bg-white rounded-md px-2 py-0.5 font-mono text-[10px] font-bold tracking-widest uppercase text-foreground">
                     {q.type}
                   </span>
-                  <span className="truncate font-mono text-[12px] font-bold text-muted-foreground ml-2">
+                  <span
+                    className="truncate font-mono text-[12px] font-bold text-muted-foreground ml-2"
+                    title={`${q.subject}${q.topic ? ` · ${q.topic}` : ""}`}
+                  >
                     {q.subject}
                     {q.topic ? ` · ${q.topic}` : ""}
                   </span>
@@ -422,7 +425,7 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
                         type="button"
                         onClick={() => setOpen((s) => ({ ...s, [q.id]: !expanded }))}
                         aria-expanded={expanded}
-                        className="neo-btn bg-background px-4 py-2 font-bold text-xs text-foreground"
+                        className="neo-btn bg-background px-4 py-2 min-h-11 font-bold text-xs text-foreground"
                       >
                         {expanded ? "Hide solution" : "Show solution"}
                       </button>
@@ -454,7 +457,7 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
                             type="button"
                             onClick={() => handleToggleResolved(q.id)}
                             className={cn(
-                              "px-3 py-1 border-2 text-[10px] uppercase font-bold transition-all shadow-neo-sm rounded-md",
+                              "px-3 py-1 min-h-11 border-2 text-[10px] uppercase font-bold transition-all shadow-neo-sm rounded-md",
                               mistakesList.find((m) => m.questionId === q.id)?.resolved
                                 ? "border-[#58CC02] bg-[#E5F9D6] text-[#58CC02]"
                                 : "border-border bg-white text-muted-foreground hover:-translate-y-0.5"
@@ -478,7 +481,7 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
                                 type="button"
                                 onClick={() => handleTagCause(q.id, c.value)}
                                 className={cn(
-                                  "border-2 px-3 py-1.5 rounded-lg font-mono text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-neo-sm hover:-translate-y-0.5",
+                                  "border-2 px-3 py-1.5 min-h-11 rounded-lg font-mono text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-neo-sm hover:-translate-y-0.5",
                                   isSelected
                                     ? "border-[#FF9600] bg-[#FFF2DE] text-[#B36900]"
                                     : "border-border bg-white text-muted-foreground"

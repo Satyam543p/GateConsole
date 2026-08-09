@@ -23,6 +23,7 @@ import type {
   ConceptNote,
   Question,
   StoredExamResult,
+  DailyChallenge,
 } from "../domain/types"
 import { LOCAL_USER_ID, GATE_CSE_EXAM_ID } from "../domain/types"
 
@@ -38,6 +39,7 @@ export const COLLECTIONS = {
   questions:  "questions",   // user-imported questions (P1)
   settings:   "settings",
   examResults: "exam-results",
+  daily:      "daily",
 } as const
 
 export type Collection = typeof COLLECTIONS[keyof typeof COLLECTIONS]
@@ -53,6 +55,7 @@ export type CollectionTypeMap = {
   questions:  import("../domain/types").Question
   settings:   AppSettings
   "exam-results": StoredExamResult
+  daily:      DailyChallenge
 }
 
 // ─── Backup / import types ────────────────────────────────────────────────────
@@ -588,4 +591,4 @@ export async function getQuestionBank(): Promise<Question[]> {
 
 // ─── Type re-exports so importers don't need two imports ─────────────────────
 
-export type { AppSettings, StoredAttempt, MistakeEntry, SrsCard, StudySession, PlanBlock, ConceptNote, Question, StoredExamResult }
+export type { AppSettings, StoredAttempt, MistakeEntry, SrsCard, StudySession, PlanBlock, ConceptNote, Question, StoredExamResult, DailyChallenge }

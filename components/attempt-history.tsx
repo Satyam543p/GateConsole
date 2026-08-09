@@ -203,7 +203,7 @@ export function AttemptHistory() {
   }
 
   return (
-    <main className="min-h-screen relative z-10 bg-background pb-12">
+    <main className="min-h-dvh relative z-10 bg-background pb-12">
       <section className="relative overflow-hidden border-b-3 border-border">
         <div className="grid-lines absolute inset-0" aria-hidden="true" />
         <div className="relative mx-auto max-w-[1600px] px-4 py-10 md:px-8 md:py-14">
@@ -222,7 +222,7 @@ export function AttemptHistory() {
             <button
               type="button"
               onClick={() => window.print()}
-              className="neo-btn bg-white text-foreground hover:text-primary transition-colors print:hidden flex items-center gap-2 px-4 py-2"
+              className="neo-btn bg-white text-foreground hover:text-primary transition-colors print:hidden flex items-center gap-2 px-4 py-2 min-h-11"
             >
               <Printer className="size-4" />
               Print Progress Report
@@ -264,8 +264,8 @@ export function AttemptHistory() {
                 <p className="font-mono text-xs font-bold tracking-widest text-[#FF9600] uppercase">
                   Expected GATE Score Interval
                 </p>
-                <div className="mt-4 flex items-baseline gap-4">
-                  <span className="font-mono text-5xl font-black text-foreground tracking-tight">
+                <div className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                  <span className="font-mono text-4xl font-black text-foreground tracking-tight md:text-5xl">
                     {scoreEstimate.low} &ndash;{" "}
                     <span className="text-[#FF9600]">{scoreEstimate.mid}</span> &ndash; {scoreEstimate.high}
                   </span>
@@ -299,7 +299,7 @@ export function AttemptHistory() {
                   <div className={`absolute top-0 right-0 w-12 h-12 ${s.color} rounded-bl-[100px] opacity-20 pointer-events-none`} />
                   <dd className={cn("font-mono text-3xl font-black leading-none tabular-nums", s.tone)}>{s.v}</dd>
                   <dt className="mt-2 font-bold text-[13px] uppercase tracking-wider text-foreground">{s.l}</dt>
-                  <p className="mt-1 truncate font-mono text-[11px] font-medium text-muted-foreground">{s.sub}</p>
+                  <p className="mt-1 truncate font-mono text-[11px] font-medium text-muted-foreground" title={s.sub}>{s.sub}</p>
                 </div>
               ))}
             </div>
@@ -474,7 +474,7 @@ export function AttemptHistory() {
           <button
             type="button"
             onClick={() => setConfirmClear(true)}
-            className="ml-auto inline-flex items-center gap-2 border-2 border-border rounded-xl bg-card px-4 py-2 font-mono text-xs font-bold tracking-wide text-muted-foreground shadow-neo-sm transition-all hover:-translate-y-0.5 hover:border-[#FF4B4B] hover:text-[#FF4B4B]"
+            className="ml-auto inline-flex items-center gap-2 border-2 border-border rounded-xl bg-card px-4 py-2 min-h-11 font-mono text-xs font-bold tracking-wide text-muted-foreground shadow-neo-sm transition-all hover:-translate-y-0.5 hover:border-[#FF4B4B] hover:text-[#FF4B4B]"
           >
             <Trash2 className="size-3.5" aria-hidden="true" />
             Clear all history
@@ -574,7 +574,7 @@ export function AttemptHistory() {
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             href={`/results/${a.id}`}
-                            className="border-2 border-border rounded-lg bg-white px-3 py-1.5 font-mono text-xs font-bold tracking-wide transition-all shadow-neo-sm hover:-translate-y-0.5 hover:border-[#1CB0F6] hover:text-[#1CB0F6]"
+                            className="inline-flex items-center border-2 border-border rounded-lg bg-white px-3 py-1.5 min-h-11 font-mono text-xs font-bold tracking-wide transition-all shadow-neo-sm hover:-translate-y-0.5 hover:border-[#1CB0F6] hover:text-[#1CB0F6]"
                           >
                             Review
                           </Link>
@@ -582,7 +582,7 @@ export function AttemptHistory() {
                             type="button"
                             onClick={() => remove(a.id)}
                             aria-label={`Delete attempt from ${new Date(a.submittedAt).toLocaleString()}`}
-                            className="border-2 border-border rounded-lg bg-white p-2 text-muted-foreground shadow-neo-sm transition-all hover:-translate-y-0.5 hover:border-[#FF4B4B] hover:text-[#FF4B4B] hover:bg-[#FFE5E5]"
+                            className="inline-flex items-center justify-center border-2 border-border rounded-lg bg-white p-2 min-h-11 min-w-11 text-muted-foreground shadow-neo-sm transition-all hover:-translate-y-0.5 hover:border-[#FF4B4B] hover:text-[#FF4B4B] hover:bg-[#FFE5E5]"
                           >
                             <Trash2 className="size-4" />
                           </button>

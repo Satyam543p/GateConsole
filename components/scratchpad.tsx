@@ -20,7 +20,7 @@ export function Scratchpad({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 w-96 border-2 border-primary bg-card shadow-2xl font-mono">
+    <div className="fixed bottom-6 left-6 z-50 w-[min(24rem,calc(100vw-2rem))] border-2 border-primary bg-card shadow-2xl font-mono">
       {/* Header */}
       <div className="bg-primary px-3 py-2 text-primary-foreground flex items-center justify-between font-bold text-xs uppercase tracking-wider">
         <span className="flex items-center gap-1.5">

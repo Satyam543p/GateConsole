@@ -7,7 +7,7 @@
  * Rule: Compute derived stats in selectors, never inline in UI components.
  */
 
-import type { StoredAttempt, StudySession, Question, AppSettings } from "@/lib/domain/types"
+import type { StoredAttempt, StudySession, Question, AppSettings, DailyChallenge, SubjectProgressState } from "@/lib/domain/types"
 import { TOPICS, priorityScore, type Topic } from "@/lib/exams/gate-cse/data"
 
 // ─── Today's Date Helper (ISO YYYY-MM-DD in local time) ──────────────────────
@@ -74,6 +74,79 @@ export function getStudyStreak(attempts: StoredAttempt[], sessions: StudySession
   }
 
   return streak
+}
+
+// ─── Daily Challenge (seed + streak) ─────────────────────────────────────────
+
+/** Shift an ISO date (YYYY-MM-DD) by a number of days. Negative → past. */
+export function getDateOffsetIso(iso: string, days: number): string {
+  const [y, m, d] = iso.split("-").map(Number)
+  const date = new Date(y, m - 1, d)
+  date.setDate(date.getDate() + days)
+  const yy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, "0")
+  const dd = String(date.getDate()).padStart(2, "0")
+  return `${yy}-${mm}-${dd}`
+}
+
+/**
+ * Daily-challenge streak: consecutive days ending today (or yesterday, if today
+ * is still unanswered) on which the challenge was answered correctly.
+ *
+ * Rule (locked): increments on a correct answer only; a wrong answer resets to 0.
+ */
+export function getDailyChallengeStreak(records: DailyChallenge[], today?: string): number {
+  const todayIso = today ?? getTodayIsoDate()
+  const todayRecord = records.find((r) => r.id === todayIso)
+  if (todayRecord?.correct === true) return todayRecord.streak
+  if (todayRecord?.correct === false) return 0
+
+  // Today unanswered — the chain stays alive at yesterday's value if it was correct.
+  const yesterday = records.find((r) => r.id === getDateOffsetIso(todayIso, -1))
+  if (yesterday?.correct === true) return yesterday.streak
+  return 0
+}
+
+export interface ChallengeSeedSubject {
+  id: string
+  name: string
+  weightage: number
+}
+
+/**
+ * Pick today's challenge question. Bias (moved from the dashboard card):
+ * prefer questions from non-completed subjects with the highest weightage;
+ * once everything is complete, fall back to the highest-weightage subject.
+ * Matches questions to subjects by *name* (the bank uses names like "Algorithms"),
+ * which also fixes the old id-vs-name mismatch that silently served questions[0].
+ */
+export function seedChallengeQuestionId(
+  questions: Question[],
+  subjects: ChallengeSeedSubject[],
+  subjectProgress: Record<string, SubjectProgressState>
+): string {
+  if (questions.length === 0) return ""
+
+  const byName = new Map<string, ChallengeSeedSubject>()
+  for (const s of subjects) byName.set(s.name.toLowerCase().trim(), s)
+
+  const scored = questions.map((q) => {
+    const sub = byName.get(q.subject.toLowerCase().trim())
+    return {
+      q,
+      weightage: sub?.weightage ?? 0,
+      completed: sub ? !!subjectProgress[sub.id]?.completed : false,
+    }
+  })
+
+  const incomplete = scored.filter((s) => !s.completed)
+  const pool = incomplete.length > 0 ? incomplete : scored
+
+  let maxWeight = -1
+  for (const s of pool) if (s.weightage > maxWeight) maxWeight = s.weightage
+  const top = pool.filter((s) => s.weightage === maxWeight)
+
+  return top[Math.floor(Math.random() * top.length)].q.id
 }
 
 // ─── Readiness Meter Heuristic (0 to 100%) ────────────────────────────────────

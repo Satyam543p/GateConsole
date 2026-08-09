@@ -92,7 +92,7 @@ export default function PlanPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-dvh bg-background">
       {/* Header & Readiness Section */}
       <header className="border-b border-border bg-card/50 p-6 md:p-8">
         <div className="mx-auto max-w-[1600px] space-y-6">
@@ -189,7 +189,7 @@ export default function PlanPage() {
 
                     <Link
                       href={lever.link}
-                      className="inline-flex items-center gap-1 border border-border hover:border-primary px-3 py-1 font-mono text-[10px] text-muted-foreground hover:text-primary transition-colors shrink-0"
+                      className="inline-flex items-center gap-1 border border-border hover:border-primary px-3 py-1 min-h-11 font-mono text-[10px] text-muted-foreground hover:text-primary transition-colors shrink-0"
                     >
                       Execute <ArrowRight className="size-3" />
                     </Link>

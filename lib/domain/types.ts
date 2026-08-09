@@ -136,7 +136,7 @@ export interface Concept {
 // ─── Question ─────────────────────────────────────────────────────────────────
 
 export type QuestionType = "MCQ" | "MSQ" | "NAT"
-export type Marks = 1 | 2
+export type Marks = 1 | 2 | 4
 
 export interface Question {
   /** Stable unique id. Convention: "gate-cse:subject-slug:nnn" */
@@ -180,11 +180,28 @@ export interface Question {
 export interface TestDefinition {
   id: string
   title: string
-  kind: "subject" | "mock" | "practice" | "drill"
+  kind: "subject" | "mock" | "practice" | "drill" | "daily"
   subject?: string
   durationMinutes: number
   description: string
   questionIds: string[]
+}
+
+// ─── Daily Challenge ──────────────────────────────────────────────────────────
+
+export interface DailyChallenge extends UserRecord {
+  /** ISO date (YYYY-MM-DD) — one record per day */
+  id: string
+  /** Today's seeded question — identical all day */
+  questionId: string
+  /** true once today's challenge has been answered */
+  solved: boolean
+  /** Today's result; null until answered */
+  correct: boolean | null
+  /** Streak after today's outcome (0 = broken) */
+  streak: number
+  /** ISO timestamp of today's answer */
+  answeredAt?: string
 }
 
 // ─── Attempt ─────────────────────────────────────────────────────────────────

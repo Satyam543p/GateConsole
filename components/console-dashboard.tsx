@@ -1,23 +1,29 @@
 "use client"
 
-import React, { useMemo } from "react"
+import React, { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowRight, Flame, Check, Play, Map, Target } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useSettings, useQuestionBank } from "@/lib/storage/hooks"
+import { useSettings, useDailyChallenge } from "@/lib/storage/hooks"
 import { getSubjectsForExam, getActiveExamId } from "@/lib/exams/registry"
 
 export function ConsoleDashboard() {
   const { settings, updateSettings } = useSettings()
-  const { questions } = useQuestionBank()
 
-  const subjectProgress = settings.subjectProgress || {}
+  const subjectProgress = useMemo(() => settings.subjectProgress || {}, [settings.subjectProgress])
   const activeExamId = getActiveExamId(settings.profile)
-  const SUBJECTS = getSubjectsForExam(activeExamId)
-  
+  const SUBJECTS = useMemo(() => getSubjectsForExam(activeExamId), [activeExamId])
+
   const userName = settings.profile?.name || "Guest"
+
+  // Time-aware greeting (effect-synced so the statically-prerendered HTML never mismatches)
+  const [greeting, setGreeting] = useState("Good evening")
+  useEffect(() => {
+    const h = new Date().getHours()
+    setGreeting(h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening")
+  }, [])
 
   const toggleCompleted = (id: string) => {
     updateSettings({
@@ -64,27 +70,16 @@ export function ConsoleDashboard() {
       .sort((a, b) => b.weightage - a.weightage)
   }, [subjectProgress, SUBJECTS])
 
-  // Daily Challenge Logic: Pick a random question from high weightage, non-completed subjects first
-  const dailyChallenge = useMemo(() => {
-    if (questions.length === 0) return null
-    // Bias: subjects not completed but high weightage
-    const incompleteSubjects = SUBJECTS.filter(s => !subjectProgress[s.id]?.completed)
-    const targetSubjectId = incompleteSubjects.length > 0 
-      ? incompleteSubjects[0].id 
-      : SUBJECTS[0].id
-
-    const validQuestions = questions.filter(q => q.subject === targetSubjectId)
-    if (validQuestions.length === 0) return questions[0]
-    return validQuestions[Math.floor(Math.random() * validQuestions.length)]
-  }, [questions, subjectProgress, SUBJECTS])
+  // Daily Challenge — real streak + same-day question, sourced from the shared hook.
+  const { streak, loading: dailyLoading } = useDailyChallenge()
 
   return (
-    <div className="relative z-10 pt-12 pb-24 px-6 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="relative z-10 pt-12 pb-24 px-4 md:px-6 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
       
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
         <div>
           <h1 className="text-[32px] font-heading font-black text-primary-text uppercase tracking-tight">
-            Good evening, {userName}
+            {greeting}, {userName}
           </h1>
           <p className="text-[16px] text-secondary-text mt-1 font-bold">
             Track your progress and drill your weak areas. {activeExamId !== "gate-cse" && <span className="text-[#FF9600]">[{activeExamId.toUpperCase()} Demo]</span>}
@@ -117,21 +112,22 @@ export function ConsoleDashboard() {
                     Challenge of the Day
                   </span>
                 </div>
-                {dailyChallenge ? (
-                  <>
-                    <h3 className="text-[20px] font-bold mb-2 line-clamp-3 leading-tight drop-shadow-sm">
-                      {dailyChallenge.text.substring(0, 150)}...
-                    </h3>
-                    <p className="text-[14px] font-bold opacity-90 mb-6 drop-shadow-sm">
-                      Subject: {SUBJECTS.find(s => s.id === dailyChallenge.subject)?.name || dailyChallenge.subject}
-                    </p>
-                  </>
-                ) : (
-                  <p className="font-bold opacity-90">Loading challenge...</p>
-                )}
+                <div className="flex items-end gap-2 mb-2">
+                  <span className="font-heading text-[40px] font-black leading-none drop-shadow-sm">
+                    {dailyLoading ? "…" : streak}
+                  </span>
+                  <span className="text-[13px] font-black uppercase opacity-90 mb-1">
+                    day streak
+                  </span>
+                </div>
+                <p className="text-[14px] font-bold opacity-90 mb-6 drop-shadow-sm">
+                  {streak === 0
+                    ? "Solve today's question to start a streak."
+                    : "Answer today correctly to keep the streak alive."}
+                </p>
               </div>
-              
-              <Link href="/tests" className={cn(buttonVariants({ variant: "outline" }), "w-fit gap-2 border-[3px] border-[#1F2937] bg-white text-[#1F2937] shadow-neo-sm hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 active:shadow-none hover:bg-white")}>
+
+              <Link href="/daily" className={cn(buttonVariants({ variant: "outline" }), "w-fit gap-2 border-[3px] border-[#1F2937] bg-white text-[#1F2937] shadow-neo-sm hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 active:shadow-none hover:bg-white")}>
                 Attempt Challenge <ArrowRight className="size-5" />
               </Link>
             </div>
@@ -176,23 +172,28 @@ export function ConsoleDashboard() {
         </h2>
         <Card className="overflow-hidden neo-card bg-white p-0">
           <div className="overflow-x-auto custom-scrollbar pb-2">
-            <table className="w-full text-left border-collapse min-w-[600px]">
+            <table className="w-full text-left border-collapse min-w-0">
               <thead>
                 <tr className="bg-[#DDF4FF] border-b-[3px] border-[#1F2937]">
-                  <th className="md:sticky md:left-0 md:z-20 bg-[#DDF4FF] border-r-[3px] border-[#1F2937] py-4 px-4 md:px-6 font-heading font-black text-[#1F2937] text-[13px] md:text-[16px] uppercase tracking-wider md:min-w-[200px] md:w-5/12">
-                    Subject / Chapter
+                  <th className="md:sticky md:left-0 md:z-20 bg-[#DDF4FF] border-r-[3px] border-[#1F2937] py-3 md:py-4 px-3 md:px-6 font-heading font-black text-[#1F2937] text-[11px] md:text-[16px] uppercase tracking-wider md:min-w-[200px] md:w-5/12 min-w-0">
+                    <span className="md:hidden">Subject</span>
+                    <span className="hidden md:inline">Subject / Chapter</span>
                   </th>
-                  <th className="py-4 px-2 md:px-4 font-heading font-black text-[#1F2937] text-[12px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
-                    Status
+                  <th className="py-3 md:py-4 px-1 md:px-4 font-heading font-black text-[#1F2937] text-[10px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
+                    <span className="md:hidden">Done</span>
+                    <span className="hidden md:inline">Status</span>
                   </th>
-                  <th className="py-4 px-2 md:px-4 font-heading font-black text-[#1F2937] text-[12px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
-                    Revision
+                  <th className="py-3 md:py-4 px-1 md:px-4 font-heading font-black text-[#1F2937] text-[10px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
+                    <span className="md:hidden">Revise</span>
+                    <span className="hidden md:inline">Revision</span>
                   </th>
-                  <th className="py-4 px-2 md:px-4 font-heading font-black text-[#1F2937] text-[12px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
-                    Practice
+                  <th className="py-3 md:py-4 px-1 md:px-4 font-heading font-black text-[#1F2937] text-[10px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
+                    <span className="md:hidden">Drill</span>
+                    <span className="hidden md:inline">Practice</span>
                   </th>
-                  <th className="py-4 px-2 md:px-4 font-heading font-black text-[#1F2937] text-[12px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
-                    Mindmap
+                  <th className="py-3 md:py-4 px-1 md:px-4 font-heading font-black text-[#1F2937] text-[10px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
+                    <span className="md:hidden">Map</span>
+                    <span className="hidden md:inline">Mindmap</span>
                   </th>
                 </tr>
               </thead>
@@ -221,38 +222,38 @@ export function ConsoleDashboard() {
                         )}
                       >
                         <td className={cn(
-                          "md:sticky md:left-0 md:z-10 border-r-[3px] border-[#1F2937] py-4 px-4 md:px-6 group-hover:bg-muted/50 transition-colors",
+                          "md:sticky md:left-0 md:z-10 border-r-[3px] border-[#1F2937] py-3 md:py-4 px-3 md:px-6 group-hover:bg-muted/50 transition-colors min-w-0",
                           rowBg
                         )}>
                           <div className="flex items-center gap-2 md:gap-3">
                             <div className={cn(
-                              "size-8 md:size-10 rounded-[12px] border-[3px] border-[#1F2937] flex items-center justify-center font-heading font-black text-[14px] md:text-[16px] shrink-0 transition-all shadow-neo-sm",
-                              isCompleted 
-                                ? "bg-[#58CC02] text-white" 
+                              "hidden md:flex size-8 md:size-10 rounded-[12px] border-[3px] border-[#1F2937] items-center justify-center font-heading font-black text-[14px] md:text-[16px] shrink-0 transition-all shadow-neo-sm",
+                              isCompleted
+                                ? "bg-[#58CC02] text-white"
                                 : "bg-white text-[#1F2937]"
                             )}>
                               {idx + 1}
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className={cn(
-                                "font-black text-[14px] md:text-[16px] transition-colors leading-tight mb-1",
+                                "font-black text-[13px] md:text-[16px] transition-colors leading-tight mb-1 truncate min-w-0",
                                 isCompleted ? "text-[#1F2937]" : "text-primary-text"
-                              )}>
+                              )} title={sub.name}>
                                 {sub.name}
                               </p>
-                              <p className="text-[11px] md:text-[13px] font-bold text-secondary-text uppercase tracking-wider">
+                              <p className="text-[10px] md:text-[13px] font-bold text-secondary-text uppercase tracking-wider">
                                 Weight: {sub.weightage} marks
                               </p>
                             </div>
                           </div>
                         </td>
                         
-                        <td className="py-4 px-2 md:px-4 text-center border-l-[3px] border-[#1F2937]">
+                        <td className="py-3 md:py-4 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937]">
                           <button
                             onClick={() => !hasChapters && toggleCompleted(sub.id)}
                             disabled={hasChapters}
                             className={cn(
-                              "relative size-10 rounded-[12px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm overflow-hidden",
+                              "relative size-9 md:size-10 rounded-[12px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm overflow-hidden",
                               isCompleted 
                                 ? "bg-[#58CC02] text-white"
                                 : "bg-white text-transparent",
@@ -261,6 +262,7 @@ export function ConsoleDashboard() {
                                 : "hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none hover:bg-gray-50"
                             )}
                             title={hasChapters ? "Complete all chapters to unlock" : "Toggle completion"}
+                            aria-label={hasChapters ? "Complete all chapters to unlock" : "Toggle completion"}
                           >
                             <Check 
                               className={cn(
@@ -272,12 +274,12 @@ export function ConsoleDashboard() {
                           </button>
                         </td>
 
-                        <td className="py-4 px-2 md:px-4 text-center border-l-[3px] border-[#1F2937]">
+                        <td className="py-3 md:py-4 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937]">
                           <button
                             onClick={() => !hasChapters && toggleRevised(sub.id)}
                             disabled={hasChapters}
                             className={cn(
-                              "relative size-10 rounded-[12px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm overflow-hidden",
+                              "relative size-9 md:size-10 rounded-[12px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm overflow-hidden",
                               isRevised 
                                 ? "bg-[#CE82FF] text-white"
                                 : "bg-white text-transparent",
@@ -286,6 +288,7 @@ export function ConsoleDashboard() {
                                 : "hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none hover:bg-gray-50"
                             )}
                             title={hasChapters ? "Revise all chapters to unlock" : "Toggle revision"}
+                            aria-label={hasChapters ? "Revise all chapters to unlock" : "Toggle revision"}
                           >
                             <Check 
                               className={cn(
@@ -297,23 +300,27 @@ export function ConsoleDashboard() {
                           </button>
                         </td>
 
-                        <td className="py-4 px-2 md:px-4 text-center border-l-[3px] border-[#1F2937]">
-                          <Link 
+                        <td className="py-3 md:py-4 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937]">
+                          <Link
                             href={`/tests/subj-${sub.id}?mode=practice`}
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#FF9600] border-[3px] border-[#1F2937] text-white rounded-[12px] font-heading font-black text-[11px] md:text-[13px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
+                            title={`Drill ${sub.name}`}
+                            aria-label={`Drill ${sub.name}`}
+                            className="inline-flex items-center justify-center gap-1.5 size-9 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-[#FF9600] border-[3px] border-[#1F2937] text-white rounded-[12px] font-heading font-black text-[11px] md:text-[13px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
                           >
                             <Play className="size-3 fill-current" />
-                            Drill
+                            <span className="hidden md:inline">Drill</span>
                           </Link>
                         </td>
-                        
-                        <td className="py-4 px-2 md:px-4 text-center border-l-[3px] border-[#1F2937]">
-                          <Link 
+
+                        <td className="py-3 md:py-4 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937]">
+                          <Link
                             href={`/map?subject=${sub.id}`}
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border-[3px] border-[#1F2937] text-[#1F2937] rounded-[12px] font-heading font-black text-[11px] md:text-[13px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
+                            title={`Map ${sub.name}`}
+                            aria-label={`Map ${sub.name}`}
+                            className="inline-flex items-center justify-center gap-1.5 size-9 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-white border-[3px] border-[#1F2937] text-[#1F2937] rounded-[12px] font-heading font-black text-[11px] md:text-[13px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
                           >
                             <Map className="size-3" strokeWidth={3} />
-                            Map
+                            <span className="hidden md:inline">Map</span>
                           </Link>
                         </td>
                       </tr>
@@ -324,55 +331,63 @@ export function ConsoleDashboard() {
                         const chRevised = subjectProgress[ch.id]?.revised
                         return (
                           <tr key={ch.id} className="bg-slate-50/50 hover:bg-slate-100/50 transition-colors group/ch">
-                            <td className="md:sticky md:left-0 md:z-10 bg-[#F8FAFC] group-hover/ch:bg-slate-100 border-r-[3px] border-[#1F2937] py-3 px-4 md:px-6 pl-12 md:pl-16 border-t-[2px] border-dashed border-slate-300 transition-colors">
-                              <div className="flex items-center gap-2 md:gap-3">
-                                <div className="size-2 rounded-full bg-slate-300"></div>
+                            <td className="md:sticky md:left-0 md:z-10 bg-[#F8FAFC] group-hover/ch:bg-slate-100 border-r-[3px] border-[#1F2937] py-2.5 md:py-3 px-3 md:px-6 pl-8 md:pl-16 border-t-[2px] border-dashed border-slate-300 transition-colors min-w-0">
+                              <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                                <div className="size-2 rounded-full bg-slate-300 shrink-0"></div>
                                 <p className={cn(
-                                  "font-bold text-[12px] md:text-[14px]",
+                                  "font-bold text-[10px] sm:text-[11px] md:text-[14px] truncate min-w-0",
                                   chCompleted ? "text-[#1F2937]" : "text-secondary-text"
-                                )}>
+                                )} title={ch.name}>
                                   {ch.name}
                                 </p>
                               </div>
                             </td>
-                            <td className="py-3 px-2 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
+                            <td className="py-2.5 md:py-3 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
                               <button
                                 onClick={() => toggleCompleted(ch.id)}
+                                aria-label={`Mark ${ch.name} complete`}
+                                title={`Mark ${ch.name} complete`}
                                 className={cn(
-                                  "relative size-8 rounded-[10px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none overflow-hidden",
+                                  "relative size-9 md:size-8 rounded-[10px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none overflow-hidden",
                                   chCompleted ? "bg-[#58CC02] text-white" : "bg-white text-transparent hover:bg-gray-50"
                                 )}
                               >
                                 <Check className={cn("absolute size-5 transition-all duration-300", chCompleted ? "scale-100 opacity-100" : "scale-150 opacity-0")} strokeWidth={4} />
                               </button>
                             </td>
-                            <td className="py-3 px-2 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
+                            <td className="py-2.5 md:py-3 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
                               <button
                                 onClick={() => toggleRevised(ch.id)}
+                                aria-label={`Mark ${ch.name} revised`}
+                                title={`Mark ${ch.name} revised`}
                                 className={cn(
-                                  "relative size-8 rounded-[10px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none overflow-hidden",
+                                  "relative size-9 md:size-8 rounded-[10px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none overflow-hidden",
                                   chRevised ? "bg-[#CE82FF] text-white" : "bg-white text-transparent hover:bg-gray-50"
                                 )}
                               >
                                 <Check className={cn("absolute size-5 transition-all duration-300", chRevised ? "scale-100 opacity-100" : "scale-150 opacity-0")} strokeWidth={4} />
                               </button>
                             </td>
-                            <td className="py-3 px-2 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
-                              <Link 
+                            <td className="py-2.5 md:py-3 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
+                              <Link
                                 href={`/tests/${ch.id}?mode=practice`}
-                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#FF9600] border-[3px] border-[#1F2937] text-white rounded-[12px] font-heading font-black text-[11px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
+                                title={`Drill ${ch.name}`}
+                                aria-label={`Drill ${ch.name}`}
+                                className="inline-flex items-center justify-center gap-1.5 size-8 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-[#FF9600] border-[3px] border-[#1F2937] text-white rounded-[12px] font-heading font-black text-[11px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
                               >
                                 <Play className="size-3 fill-current" />
-                                Drill
+                                <span className="hidden md:inline">Drill</span>
                               </Link>
                             </td>
-                            <td className="py-3 px-2 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
-                              <Link 
+                            <td className="py-2.5 md:py-3 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
+                              <Link
                                 href={`/map?subject=${sub.id}&chapter=${ch.id}`}
-                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border-[3px] border-[#1F2937] text-[#1F2937] rounded-[12px] font-heading font-black text-[11px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
+                                title={`Map ${ch.name}`}
+                                aria-label={`Map ${ch.name}`}
+                                className="inline-flex items-center justify-center gap-1.5 size-8 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-white border-[3px] border-[#1F2937] text-[#1F2937] rounded-[12px] font-heading font-black text-[11px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
                               >
                                 <Map className="size-3" strokeWidth={3} />
-                                Map
+                                <span className="hidden md:inline">Map</span>
                               </Link>
                             </td>
                           </tr>
