@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { useSettings, useDailyChallenge } from "@/lib/storage/hooks"
 import { EXAMS, GATE_DOMAINS } from "@/lib/exams/registry"
+import { Logo } from "@/components/logo"
 
 const NAV_ITEMS = [
   { href: "/", label: "Today", icon: Home },
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
 export function SiteNav() {
   const pathname = usePathname()
   const [isExpanded, setIsExpanded] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
   const { settings } = useSettings()
   const { streak: dailyStreak, loading: dailyLoading } = useDailyChallenge()
 
@@ -50,6 +52,9 @@ export function SiteNav() {
         onMouseLeave={() => setIsExpanded(false)}
       >
         <div className="flex flex-col h-full py-6">
+          <div className="mb-6 flex justify-center w-full">
+             <Logo isExpanded={isExpanded} />
+          </div>
           <div className="px-3 mb-6 flex justify-center">
              {/* STREAK COUNTER */}
              <div className={cn(
@@ -93,20 +98,44 @@ export function SiteNav() {
             })}
           </nav>
           
-          <div className="px-3 mt-auto flex flex-col gap-2">
+          <div className="px-3 mt-auto flex flex-col gap-2 relative">
             {currentProfile && (
-              <div className={cn(
-                "flex items-center gap-4 px-3 py-2 rounded-[12px] border-[2px] border-[#1F2937] bg-[#F3F4F6] transition-all duration-150 overflow-hidden mb-1",
-                isExpanded ? "w-full justify-start" : "justify-center"
-              )}>
-                <UserCircle2 className="size-5 shrink-0 text-[#1F2937]" />
-                <div className={cn(
-                  "flex flex-col whitespace-nowrap transition-opacity duration-150",
-                  isExpanded ? "opacity-100" : "opacity-0 w-0 hidden"
-                )}>
-                  <span className="text-[12px] font-black text-[#1F2937] leading-none">{currentProfile.name}</span>
-                  <span className="text-[10px] font-bold text-secondary-text mt-0.5 max-w-[100px] truncate" title={displayExam}>{displayExam}</span>
-                </div>
+              <div className="relative">
+                <button 
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className={cn(
+                    "flex items-center gap-4 px-3 py-2 rounded-[12px] border-[2px] border-[#1F2937] bg-[#F3F4F6] hover:bg-[#E5E7EB] transition-all duration-150 overflow-hidden mb-1 w-full text-left outline-none cursor-pointer",
+                    isExpanded ? "justify-start" : "justify-center"
+                  )}
+                >
+                  <UserCircle2 className="size-5 shrink-0 text-[#1F2937]" />
+                  <div className={cn(
+                    "flex flex-col whitespace-nowrap transition-opacity duration-150",
+                    isExpanded ? "opacity-100" : "opacity-0 w-0 hidden"
+                  )}>
+                    <span className="text-[12px] font-black text-[#1F2937] leading-none">{currentProfile.name}</span>
+                    <span className="text-[10px] font-bold text-secondary-text mt-0.5 max-w-[100px] truncate" title={displayExam}>{displayExam}</span>
+                  </div>
+                </button>
+
+                {/* Profile Popup Menu */}
+                {showProfileMenu && (
+                  <div 
+                    className={cn(
+                      "absolute bottom-[110%] z-50 flex flex-col bg-white border-[2px] border-[#1F2937] rounded-xl shadow-neo p-1.5 min-w-[140px] origin-bottom-left transition-all",
+                      isExpanded ? "left-0 w-full" : "left-12"
+                    )}
+                  >
+                    <Link
+                      href="/settings"
+                      onClick={() => setShowProfileMenu(false)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary text-[#1F2937] transition-colors"
+                    >
+                      <Settings className="size-4 shrink-0" />
+                      <span className="text-[13px] font-bold whitespace-nowrap">Edit Profile</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 
@@ -131,6 +160,17 @@ export function SiteNav() {
           </div>
         </div>
       </aside>
+
+      {/* MOBILE TOP HEADER (Hidden on Desktop) */}
+      <header className="md:hidden fixed top-0 inset-x-0 h-[60px] bg-white/90 backdrop-blur-md border-b-[2px] border-[#1F2937]/10 z-50 flex items-center justify-between px-4">
+        <Logo isExpanded={true} />
+        <div className="flex items-center gap-1.5 bg-[#FF9600] border-[2px] border-[#1F2937] text-white px-2 py-1 rounded-[10px] shadow-neo-sm">
+          <Flame className="size-4 fill-white text-white" strokeWidth={2} />
+          <span className="font-black text-xs leading-none">
+            {dailyLoading ? "…" : dailyStreak}
+          </span>
+        </div>
+      </header>
 
       {/* MOBILE BOTTOM TAB BAR (Hidden on Desktop) */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 h-[65px] bg-white/90 backdrop-blur-md border-t-[2px] border-[#1F2937]/10 z-50 flex items-center justify-around px-2 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">

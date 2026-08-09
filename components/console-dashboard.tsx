@@ -171,33 +171,28 @@ export function ConsoleDashboard() {
           Subject Tracking
         </h2>
         <Card className="overflow-hidden neo-card bg-white p-0">
-          <div className="overflow-x-auto custom-scrollbar pb-2">
-            <table className="w-full text-left border-collapse min-w-0">
-              <thead>
+          <div className="overflow-x-auto custom-scrollbar pb-0 md:pb-2">
+            <table className="w-full text-left block md:table md:border-collapse min-w-0 bg-white md:bg-transparent">
+              <thead className="hidden md:table-header-group">
                 <tr className="bg-[#DDF4FF] border-b-[3px] border-[#1F2937]">
                   <th className="md:sticky md:left-0 md:z-20 bg-[#DDF4FF] border-r-[3px] border-[#1F2937] py-3 md:py-4 px-3 md:px-6 font-heading font-black text-[#1F2937] text-[11px] md:text-[16px] uppercase tracking-wider md:min-w-[200px] md:w-5/12 min-w-0">
-                    <span className="md:hidden">Subject</span>
                     <span className="hidden md:inline">Subject / Chapter</span>
                   </th>
                   <th className="py-3 md:py-4 px-1 md:px-4 font-heading font-black text-[#1F2937] text-[10px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
-                    <span className="md:hidden">Done</span>
                     <span className="hidden md:inline">Status</span>
                   </th>
                   <th className="py-3 md:py-4 px-1 md:px-4 font-heading font-black text-[#1F2937] text-[10px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
-                    <span className="md:hidden">Revise</span>
                     <span className="hidden md:inline">Revision</span>
                   </th>
                   <th className="py-3 md:py-4 px-1 md:px-4 font-heading font-black text-[#1F2937] text-[10px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
-                    <span className="md:hidden">Drill</span>
                     <span className="hidden md:inline">Practice</span>
                   </th>
                   <th className="py-3 md:py-4 px-1 md:px-4 font-heading font-black text-[#1F2937] text-[10px] md:text-[16px] uppercase tracking-wider text-center border-l-[3px] border-[#1F2937]">
-                    <span className="md:hidden">Map</span>
                     <span className="hidden md:inline">Mindmap</span>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y-[3px] divide-[#1F2937]">
+              <tbody className="block md:table-row-group divide-y-[3px] divide-[#1F2937]">
                 {SUBJECTS.map((sub, idx) => {
                   const hasChapters = sub.chapters && sub.chapters.length > 0
                   
@@ -217,12 +212,12 @@ export function ConsoleDashboard() {
                     <React.Fragment key={sub.id}>
                       <tr 
                         className={cn(
-                          "transition-colors hover:bg-muted/50 group",
+                          "grid grid-cols-4 md:table-row transition-colors hover:bg-muted/50 group",
                           rowBg
                         )}
                       >
                         <td className={cn(
-                          "md:sticky md:left-0 md:z-10 border-r-[3px] border-[#1F2937] py-3 md:py-4 px-3 md:px-6 group-hover:bg-muted/50 transition-colors min-w-0",
+                          "col-span-4 block md:table-cell md:sticky md:left-0 md:z-10 border-b-[3px] md:border-b-0 border-[#1F2937] md:border-r-[3px] py-3 md:py-4 px-3 md:px-6 group-hover:bg-muted/50 transition-colors min-w-0",
                           rowBg
                         )}>
                           <div className="flex items-center gap-2 md:gap-3">
@@ -248,80 +243,92 @@ export function ConsoleDashboard() {
                           </div>
                         </td>
                         
-                        <td className="py-3 md:py-4 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937]">
-                          <button
-                            onClick={() => !hasChapters && toggleCompleted(sub.id)}
-                            disabled={hasChapters}
-                            className={cn(
-                              "relative size-9 md:size-10 rounded-[12px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm overflow-hidden",
-                              isCompleted 
-                                ? "bg-[#58CC02] text-white"
-                                : "bg-white text-transparent",
-                              hasChapters 
-                                ? "opacity-70 cursor-default shadow-none" 
-                                : "hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none hover:bg-gray-50"
-                            )}
-                            title={hasChapters ? "Complete all chapters to unlock" : "Toggle completion"}
-                            aria-label={hasChapters ? "Complete all chapters to unlock" : "Toggle completion"}
-                          >
-                            <Check 
+                        <td className="col-span-1 block md:table-cell align-middle py-3 md:py-4 px-1 md:px-4 border-r-[3px] border-[#1F2937] md:border-r-0 md:border-l-[3px] bg-white md:bg-transparent">
+                          <div className="flex flex-col justify-center items-center h-full">
+                            <span className="md:hidden text-[9px] font-black uppercase text-secondary-text mb-1.5">Status</span>
+                            <button
+                              onClick={() => !hasChapters && toggleCompleted(sub.id)}
+                              disabled={hasChapters}
                               className={cn(
-                                "absolute size-7 transition-all duration-300 ease-out", 
-                                isCompleted ? "scale-100 opacity-100" : "scale-150 opacity-0"
-                              )} 
-                              strokeWidth={4} 
-                            />
-                          </button>
+                                "relative size-9 md:size-10 rounded-[12px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm overflow-hidden",
+                                isCompleted 
+                                  ? "bg-[#58CC02] text-white"
+                                  : "bg-white text-transparent",
+                                hasChapters 
+                                  ? "opacity-70 cursor-default shadow-none" 
+                                  : "hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none hover:bg-gray-50"
+                              )}
+                              title={hasChapters ? "Complete all chapters to unlock" : "Toggle completion"}
+                              aria-label={hasChapters ? "Complete all chapters to unlock" : "Toggle completion"}
+                            >
+                              <Check 
+                                className={cn(
+                                  "absolute size-7 transition-all duration-300 ease-out", 
+                                  isCompleted ? "scale-100 opacity-100" : "scale-150 opacity-0"
+                                )} 
+                                strokeWidth={4} 
+                              />
+                            </button>
+                          </div>
                         </td>
 
-                        <td className="py-3 md:py-4 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937]">
-                          <button
-                            onClick={() => !hasChapters && toggleRevised(sub.id)}
-                            disabled={hasChapters}
-                            className={cn(
-                              "relative size-9 md:size-10 rounded-[12px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm overflow-hidden",
-                              isRevised 
-                                ? "bg-[#CE82FF] text-white"
-                                : "bg-white text-transparent",
-                              hasChapters 
-                                ? "opacity-70 cursor-default shadow-none" 
-                                : "hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none hover:bg-gray-50"
-                            )}
-                            title={hasChapters ? "Revise all chapters to unlock" : "Toggle revision"}
-                            aria-label={hasChapters ? "Revise all chapters to unlock" : "Toggle revision"}
-                          >
-                            <Check 
+                        <td className="col-span-1 block md:table-cell align-middle py-3 md:py-4 px-1 md:px-4 border-r-[3px] border-[#1F2937] md:border-r-0 md:border-l-[3px] bg-white md:bg-transparent">
+                          <div className="flex flex-col justify-center items-center h-full">
+                            <span className="md:hidden text-[9px] font-black uppercase text-secondary-text mb-1.5">Revise</span>
+                            <button
+                              onClick={() => !hasChapters && toggleRevised(sub.id)}
+                              disabled={hasChapters}
                               className={cn(
-                                "absolute size-7 transition-all duration-300 ease-out", 
-                                isRevised ? "scale-100 opacity-100" : "scale-150 opacity-0"
-                              )} 
-                              strokeWidth={4} 
-                            />
-                          </button>
+                                "relative size-9 md:size-10 rounded-[12px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm overflow-hidden",
+                                isRevised 
+                                  ? "bg-[#CE82FF] text-white"
+                                  : "bg-white text-transparent",
+                                hasChapters 
+                                  ? "opacity-70 cursor-default shadow-none" 
+                                  : "hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none hover:bg-gray-50"
+                              )}
+                              title={hasChapters ? "Revise all chapters to unlock" : "Toggle revision"}
+                              aria-label={hasChapters ? "Revise all chapters to unlock" : "Toggle revision"}
+                            >
+                              <Check 
+                                className={cn(
+                                  "absolute size-7 transition-all duration-300 ease-out", 
+                                  isRevised ? "scale-100 opacity-100" : "scale-150 opacity-0"
+                                )} 
+                                strokeWidth={4} 
+                              />
+                            </button>
+                          </div>
                         </td>
 
-                        <td className="py-3 md:py-4 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937]">
-                          <Link
-                            href={`/tests/subj-${sub.id}?mode=practice`}
-                            title={`Drill ${sub.name}`}
-                            aria-label={`Drill ${sub.name}`}
-                            className="inline-flex items-center justify-center gap-1.5 size-9 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-[#FF9600] border-[3px] border-[#1F2937] text-white rounded-[12px] font-heading font-black text-[11px] md:text-[13px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
-                          >
-                            <Play className="size-3 fill-current" />
-                            <span className="hidden md:inline">Drill</span>
-                          </Link>
+                        <td className="col-span-1 block md:table-cell align-middle py-3 md:py-4 px-1 md:px-4 border-r-[3px] border-[#1F2937] md:border-r-0 md:border-l-[3px] bg-white md:bg-transparent">
+                          <div className="flex flex-col justify-center items-center h-full">
+                            <span className="md:hidden text-[9px] font-black uppercase text-secondary-text mb-1.5">Practice</span>
+                            <Link
+                              href={`/tests/subj-${sub.id}?mode=practice`}
+                              title={`Drill ${sub.name}`}
+                              aria-label={`Drill ${sub.name}`}
+                              className="inline-flex items-center justify-center gap-1.5 size-9 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-[#FF9600] border-[3px] border-[#1F2937] text-white rounded-[12px] font-heading font-black text-[11px] md:text-[13px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase mx-auto"
+                            >
+                              <Play className="size-4 md:size-3 fill-current" />
+                              <span className="hidden md:inline">Drill</span>
+                            </Link>
+                          </div>
                         </td>
 
-                        <td className="py-3 md:py-4 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937]">
-                          <Link
-                            href={`/map?subject=${sub.id}`}
-                            title={`Map ${sub.name}`}
-                            aria-label={`Map ${sub.name}`}
-                            className="inline-flex items-center justify-center gap-1.5 size-9 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-white border-[3px] border-[#1F2937] text-[#1F2937] rounded-[12px] font-heading font-black text-[11px] md:text-[13px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
-                          >
-                            <Map className="size-3" strokeWidth={3} />
-                            <span className="hidden md:inline">Map</span>
-                          </Link>
+                        <td className="col-span-1 block md:table-cell align-middle py-3 md:py-4 px-1 md:px-4 md:border-l-[3px] border-[#1F2937] bg-white md:bg-transparent">
+                          <div className="flex flex-col justify-center items-center h-full">
+                            <span className="md:hidden text-[9px] font-black uppercase text-secondary-text mb-1.5">Mindmap</span>
+                            <Link
+                              href={`/map?subject=${sub.id}`}
+                              title={`Map ${sub.name}`}
+                              aria-label={`Map ${sub.name}`}
+                              className="inline-flex items-center justify-center gap-1.5 size-9 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-white border-[3px] border-[#1F2937] text-[#1F2937] rounded-[12px] font-heading font-black text-[11px] md:text-[13px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase mx-auto"
+                            >
+                              <Map className="size-4 md:size-3" strokeWidth={3} />
+                              <span className="hidden md:inline">Map</span>
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                       
@@ -330,65 +337,73 @@ export function ConsoleDashboard() {
                         const chCompleted = subjectProgress[ch.id]?.completed
                         const chRevised = subjectProgress[ch.id]?.revised
                         return (
-                          <tr key={ch.id} className="bg-slate-50/50 hover:bg-slate-100/50 transition-colors group/ch">
-                            <td className="md:sticky md:left-0 md:z-10 bg-[#F8FAFC] group-hover/ch:bg-slate-100 border-r-[3px] border-[#1F2937] py-2.5 md:py-3 px-3 md:px-6 pl-8 md:pl-16 border-t-[2px] border-dashed border-slate-300 transition-colors min-w-0">
+                          <tr key={ch.id} className="grid grid-cols-4 md:table-row bg-slate-50/50 hover:bg-slate-100/50 transition-colors group/ch border-t-[3px] md:border-t-0 border-[#1F2937]">
+                            <td className="col-span-4 block md:table-cell md:sticky md:left-0 md:z-10 bg-[#F8FAFC] group-hover/ch:bg-slate-100 border-b-[3px] md:border-b-0 border-[#1F2937] md:border-r-[3px] py-2.5 md:py-3 px-3 md:px-6 pl-6 md:pl-16 md:border-t-[2px] md:border-dashed md:border-slate-300 transition-colors min-w-0">
                               <div className="flex items-center gap-2 md:gap-3 min-w-0">
                                 <div className="size-2 rounded-full bg-slate-300 shrink-0"></div>
                                 <p className={cn(
-                                  "font-bold text-[10px] sm:text-[11px] md:text-[14px] truncate min-w-0",
+                                  "font-bold text-[11px] md:text-[14px] truncate min-w-0",
                                   chCompleted ? "text-[#1F2937]" : "text-secondary-text"
                                 )} title={ch.name}>
                                   {ch.name}
                                 </p>
                               </div>
                             </td>
-                            <td className="py-2.5 md:py-3 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
-                              <button
-                                onClick={() => toggleCompleted(ch.id)}
-                                aria-label={`Mark ${ch.name} complete`}
-                                title={`Mark ${ch.name} complete`}
-                                className={cn(
-                                  "relative size-9 md:size-8 rounded-[10px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none overflow-hidden",
-                                  chCompleted ? "bg-[#58CC02] text-white" : "bg-white text-transparent hover:bg-gray-50"
-                                )}
-                              >
-                                <Check className={cn("absolute size-5 transition-all duration-300", chCompleted ? "scale-100 opacity-100" : "scale-150 opacity-0")} strokeWidth={4} />
-                              </button>
+                            <td className="col-span-1 block md:table-cell align-middle py-2.5 md:py-3 px-1 md:px-4 border-r-[3px] border-[#1F2937] md:border-r-0 md:border-l-[3px] md:border-t-[2px] md:border-dashed md:border-slate-300 bg-white md:bg-transparent">
+                              <div className="flex flex-col justify-center items-center h-full">
+                                <button
+                                  onClick={() => toggleCompleted(ch.id)}
+                                  aria-label={`Mark ${ch.name} complete`}
+                                  title={`Mark ${ch.name} complete`}
+                                  className={cn(
+                                    "relative size-9 md:size-8 rounded-[10px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none overflow-hidden",
+                                    chCompleted ? "bg-[#58CC02] text-white" : "bg-white text-transparent hover:bg-gray-50"
+                                  )}
+                                >
+                                  <Check className={cn("absolute size-5 transition-all duration-300", chCompleted ? "scale-100 opacity-100" : "scale-150 opacity-0")} strokeWidth={4} />
+                                </button>
+                              </div>
                             </td>
-                            <td className="py-2.5 md:py-3 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
-                              <button
-                                onClick={() => toggleRevised(ch.id)}
-                                aria-label={`Mark ${ch.name} revised`}
-                                title={`Mark ${ch.name} revised`}
-                                className={cn(
-                                  "relative size-9 md:size-8 rounded-[10px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none overflow-hidden",
-                                  chRevised ? "bg-[#CE82FF] text-white" : "bg-white text-transparent hover:bg-gray-50"
-                                )}
-                              >
-                                <Check className={cn("absolute size-5 transition-all duration-300", chRevised ? "scale-100 opacity-100" : "scale-150 opacity-0")} strokeWidth={4} />
-                              </button>
+                            <td className="col-span-1 block md:table-cell align-middle py-2.5 md:py-3 px-1 md:px-4 border-r-[3px] border-[#1F2937] md:border-r-0 md:border-l-[3px] md:border-t-[2px] md:border-dashed md:border-slate-300 bg-white md:bg-transparent">
+                              <div className="flex flex-col justify-center items-center h-full">
+                                <button
+                                  onClick={() => toggleRevised(ch.id)}
+                                  aria-label={`Mark ${ch.name} revised`}
+                                  title={`Mark ${ch.name} revised`}
+                                  className={cn(
+                                    "relative size-9 md:size-8 rounded-[10px] border-[3px] border-[#1F2937] flex items-center justify-center transition-all mx-auto shadow-neo-sm hover:-translate-y-1 active:translate-y-1 active:translate-x-1 active:shadow-none overflow-hidden",
+                                    chRevised ? "bg-[#CE82FF] text-white" : "bg-white text-transparent hover:bg-gray-50"
+                                  )}
+                                >
+                                  <Check className={cn("absolute size-5 transition-all duration-300", chRevised ? "scale-100 opacity-100" : "scale-150 opacity-0")} strokeWidth={4} />
+                                </button>
+                              </div>
                             </td>
-                            <td className="py-2.5 md:py-3 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
-                              <Link
-                                href={`/tests/${ch.id}?mode=practice`}
-                                title={`Drill ${ch.name}`}
-                                aria-label={`Drill ${ch.name}`}
-                                className="inline-flex items-center justify-center gap-1.5 size-8 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-[#FF9600] border-[3px] border-[#1F2937] text-white rounded-[12px] font-heading font-black text-[11px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
-                              >
-                                <Play className="size-3 fill-current" />
-                                <span className="hidden md:inline">Drill</span>
-                              </Link>
+                            <td className="col-span-1 block md:table-cell align-middle py-2.5 md:py-3 px-1 md:px-4 border-r-[3px] border-[#1F2937] md:border-r-0 md:border-l-[3px] md:border-t-[2px] md:border-dashed md:border-slate-300 bg-white md:bg-transparent">
+                              <div className="flex flex-col justify-center items-center h-full">
+                                <Link
+                                  href={`/tests/${ch.id}?mode=practice`}
+                                  title={`Drill ${ch.name}`}
+                                  aria-label={`Drill ${ch.name}`}
+                                  className="inline-flex items-center justify-center gap-1.5 size-9 md:size-8 md:px-3 md:py-1.5 md:min-h-0 bg-[#FF9600] border-[3px] border-[#1F2937] text-white rounded-[12px] md:rounded-[10px] font-heading font-black text-[11px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase mx-auto"
+                                >
+                                  <Play className="size-4 md:size-3 fill-current" />
+                                  <span className="hidden md:inline">Drill</span>
+                                </Link>
+                              </div>
                             </td>
-                            <td className="py-2.5 md:py-3 px-1 md:px-4 text-center border-l-[3px] border-[#1F2937] border-t-[2px] border-dashed border-slate-300">
-                              <Link
-                                href={`/map?subject=${sub.id}&chapter=${ch.id}`}
-                                title={`Map ${ch.name}`}
-                                aria-label={`Map ${ch.name}`}
-                                className="inline-flex items-center justify-center gap-1.5 size-8 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-white border-[3px] border-[#1F2937] text-[#1F2937] rounded-[12px] font-heading font-black text-[11px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase"
-                              >
-                                <Map className="size-3" strokeWidth={3} />
-                                <span className="hidden md:inline">Map</span>
-                              </Link>
+                            <td className="col-span-1 block md:table-cell align-middle py-2.5 md:py-3 px-1 md:px-4 md:border-l-[3px] border-[#1F2937] md:border-t-[2px] md:border-dashed md:border-slate-300 bg-white md:bg-transparent">
+                              <div className="flex flex-col justify-center items-center h-full">
+                                <Link
+                                  href={`/map?subject=${sub.id}&chapter=${ch.id}`}
+                                  title={`Map ${ch.name}`}
+                                  aria-label={`Map ${ch.name}`}
+                                  className="inline-flex items-center justify-center gap-1.5 size-9 md:size-8 md:px-3 md:py-1.5 md:min-h-0 bg-white border-[3px] border-[#1F2937] text-[#1F2937] rounded-[12px] md:rounded-[10px] font-heading font-black text-[11px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase mx-auto"
+                                >
+                                  <Map className="size-4 md:size-3" strokeWidth={3} />
+                                  <span className="hidden md:inline">Map</span>
+                                </Link>
+                              </div>
                             </td>
                           </tr>
                         )

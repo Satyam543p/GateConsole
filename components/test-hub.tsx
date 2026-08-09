@@ -167,7 +167,9 @@ export function TestHub() {
             ["subject", "Subject Drills"],
             ["drill", "Chapter Drills"],
           ] as [Filter, string][]
-        ).map(([value, label]) => (
+        )
+        .filter(([value]) => !(value === "drill" && activeExamId.startsWith("gate")))
+        .map(([value, label]) => (
           <button
             key={value}
             type="button"

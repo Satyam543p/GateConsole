@@ -34,6 +34,10 @@ import { SUBJECT_WEIGHTAGE as GATE_CE_SUBJECTS } from "./gate-ce/data"
 import { QUESTIONS as GATE_CE_QUESTIONS, TESTS as GATE_CE_TESTS } from "./gate-ce/question-bank"
 import { CONCEPTS as GATE_CE_CONCEPTS } from "./gate-ce/concepts"
 
+import { SUBJECT_WEIGHTAGE as GATE_EE_SUBJECTS } from "./gate-ee/data"
+import { QUESTIONS as GATE_EE_QUESTIONS, TESTS as GATE_EE_TESTS } from "./gate-ee/question-bank"
+import { CONCEPTS as GATE_EE_CONCEPTS } from "./gate-ee/concepts"
+
 // ─── Multi-Exam Constants ───────────────────────────────────────────────────
 
 export const EXAMS = [
@@ -44,9 +48,10 @@ export const EXAMS = [
 
 export const GATE_DOMAINS = [
   { id: "cse", name: "Computer Science" },
-  { id: "ece", name: "Electronics (Demo)" },
-  { id: "me", name: "Mechanical (Demo)" },
-  { id: "ce", name: "Civil (Demo)" },
+  { id: "ee", name: "Electrical" },
+  { id: "ece", name: "Electronics" },
+  { id: "me", name: "Mechanical" },
+  { id: "ce", name: "Civil" },
 ]
 
 // ─── Exam descriptor ─────────────────────────────────────────────────────────
@@ -112,15 +117,27 @@ function mapSubjects(subjects: any[]): SubjectInfo[] {
 }
 
 export function getSubjectsForExam(activeExamId: string): SubjectInfo[] {
+  let subjects: SubjectInfo[] = [];
+  
   switch (activeExamId) {
-    case "gate-cse": return mapSubjects(GATE_CSE_SUBJECTS)
-    case "jee": return mapSubjects(JEE_SUBJECTS)
-    case "neet": return mapSubjects(NEET_SUBJECTS)
-    case "gate-ece": return mapSubjects(GATE_ECE_SUBJECTS)
-    case "gate-me": return mapSubjects(GATE_ME_SUBJECTS)
-    case "gate-ce": return mapSubjects(GATE_CE_SUBJECTS)
-    default: return mapSubjects(GATE_CSE_SUBJECTS)
+    case "gate-cse": subjects = mapSubjects(GATE_CSE_SUBJECTS); break;
+    case "jee": subjects = mapSubjects(JEE_SUBJECTS); break;
+    case "neet": subjects = mapSubjects(NEET_SUBJECTS); break;
+    case "gate-ece": subjects = mapSubjects(GATE_ECE_SUBJECTS); break;
+    case "gate-me": subjects = mapSubjects(GATE_ME_SUBJECTS); break;
+    case "gate-ce": subjects = mapSubjects(GATE_CE_SUBJECTS); break;
+    case "gate-ee": subjects = mapSubjects(GATE_EE_SUBJECTS); break;
+    default: subjects = mapSubjects(GATE_CSE_SUBJECTS); break;
   }
+
+  // Enforce subject-level only tracking for all GATE exams.
+  // By stripping chapters here, the Dashboard, Concept Maps, and Test generator
+  // will all automatically treat the exam as subject-only.
+  if (activeExamId.startsWith("gate")) {
+    return subjects.map(s => ({ ...s, chapters: undefined }));
+  }
+
+  return subjects;
 }
 
 export function getQuestions(activeExamId: string): Question[] {
@@ -131,6 +148,7 @@ export function getQuestions(activeExamId: string): Question[] {
     case "gate-ece": return GATE_ECE_QUESTIONS
     case "gate-me": return GATE_ME_QUESTIONS
     case "gate-ce": return GATE_CE_QUESTIONS
+    case "gate-ee": return GATE_EE_QUESTIONS
     default: return GATE_CSE_QUESTIONS
   }
 }
@@ -143,6 +161,7 @@ export function getTests(activeExamId: string): TestDefinition[] {
     case "gate-ece": return GATE_ECE_TESTS
     case "gate-me": return GATE_ME_TESTS
     case "gate-ce": return GATE_CE_TESTS
+    case "gate-ee": return GATE_EE_TESTS
     default: return GATE_CSE_TESTS
   }
 }
@@ -155,6 +174,7 @@ export function getAllTests(): TestDefinition[] {
     ...GATE_ECE_TESTS,
     ...GATE_ME_TESTS,
     ...GATE_CE_TESTS,
+    ...GATE_EE_TESTS,
   ]
 
   const allQuestions = [
@@ -164,12 +184,13 @@ export function getAllTests(): TestDefinition[] {
     ...GATE_ECE_QUESTIONS,
     ...GATE_ME_QUESTIONS,
     ...GATE_CE_QUESTIONS,
+    ...GATE_EE_QUESTIONS,
   ]
 
   const chapterTests: TestDefinition[] = []
   
   // We need to iterate over all exams to find all chapters
-  const allExamIds = ["gate-cse", "jee", "neet", "gate-ece", "gate-me", "gate-ce"]
+  const allExamIds = ["gate-cse", "jee", "neet", "gate-ece", "gate-me", "gate-ce", "gate-ee"]
   
   for (const examId of allExamIds) {
     const subjects = getSubjectsForExam(examId)
@@ -242,6 +263,7 @@ export function getConcepts(activeExamId: string): any[] {
     case "gate-ece": return mapConcepts(GATE_ECE_CONCEPTS)
     case "gate-me": return mapConcepts(GATE_ME_CONCEPTS)
     case "gate-ce": return mapConcepts(GATE_CE_CONCEPTS)
+    case "gate-ee": return mapConcepts(GATE_EE_CONCEPTS)
     default: return GATE_CSE_CONCEPTS
   }
 }

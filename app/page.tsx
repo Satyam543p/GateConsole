@@ -47,16 +47,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-dvh relative overflow-x-hidden bg-[#FAFBFF]">
-      
-      {/* Playful Background Elements */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-5">
-        <Terminal className="absolute top-20 left-10 size-32 text-[#6C8EF2] -rotate-12 animate-pulse" strokeWidth={2} />
-        <Code className="absolute bottom-40 right-20 size-40 text-[#FFB020] rotate-12 animate-bounce" strokeWidth={2} />
-        <Cpu className="absolute top-40 right-1/4 size-24 text-[#1CB0F6] rotate-45 animate-pulse" strokeWidth={2} />
-        <Database className="absolute bottom-10 left-1/4 size-28 text-[#FF4B4B] -rotate-6 animate-bounce" style={{ animationDelay: '1s' }} strokeWidth={2} />
-        <Network className="absolute top-1/2 -left-10 size-48 text-[#58CC02] animate-[spin_15s_linear_infinite]" strokeWidth={2} />
-      </div>
+    <main className="min-h-dvh relative overflow-x-hidden bg-transparent">
 
       {currentState === "loading" && (
         <div className="min-h-dvh flex items-center justify-center">
