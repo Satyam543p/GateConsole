@@ -32,7 +32,12 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
     // and it's a subject drill, just pull all questions for this subject from the local active exam bank.
     // Note: We check test.id.includes("subj-") because test.kind gets overwritten by ?mode=practice in the URL!
     if (baseQs.length === 0 && test.id.includes("subj-") && test.subject) {
-      baseQs = Array.from(questionMap.values()).filter(q => q.subject === test.subject)
+      const normTestSubj = test.subject.toLowerCase().replace(/[^a-z0-9]/g, "")
+      baseQs = Array.from(questionMap.values()).filter(q => {
+        if (!q.subject) return false
+        const normQSubj = q.subject.toLowerCase().replace(/[^a-z0-9]/g, "")
+        return normQSubj.includes(normTestSubj) || normTestSubj.includes(normQSubj)
+      })
       console.log("[ExamRunner] Fallback executed. Found questions matching subject:", baseQs.length)
       if (baseQs.length === 0) {
         console.log("[ExamRunner] Fallback failed to find any questions! First 5 local subjects available in questionMap:", 
