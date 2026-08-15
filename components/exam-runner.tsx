@@ -4,7 +4,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Latex from "react-latex-next"
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Flag, X, Calculator as CalcIcon, FileEdit, Target } from "lucide-react"
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Flag, X, Calculator as CalcIcon, FileEdit, Target, Bookmark } from "lucide-react"
+import { DiagramRenderer } from "@/components/diagram-renderer"
 
 import { type Response, type StoredAttempt as LegacyStoredAttempt, type TestDefinition, formatClock, isAttempted, scoreAttempt, isCorrect } from "@/lib/test-types"
 import { newAttemptId, useAttempts } from "@/lib/use-attempts"
@@ -18,6 +19,48 @@ import { Scratchpad } from "@/components/scratchpad"
 import { cn } from "@/lib/utils"
 
 type Status = "unseen" | "answered" | "marked" | "seen"
+
+function FormattedContent({ content }: { content: string }) {
+  if (!content) return null
+
+  // Bug #10 fix: memoize parsed parts so the heavy regex split only reruns when
+  // `content` actually changes, not on every timer tick / second re-render.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const parts = useMemo(() => {
+    const clean = content.replace(/\\n/g, "\n")
+    return clean.split(/(```[\s\S]*?```)/g)
+  }, [content])
+
+  return (
+    <div className="space-y-3">
+      {parts.map((part, i) => {
+        if (part.startsWith("```")) {
+          const firstLineEnd = part.indexOf("\n")
+          const code = firstLineEnd !== -1 
+            ? part.slice(firstLineEnd + 1, -3).trim()
+            : part.slice(3, -3).trim()
+
+          return (
+            <pre
+              key={i}
+              className="my-3 overflow-x-auto border-3 border-border rounded-xl bg-[#1F2937] p-4 font-mono text-[12px] md:text-[14px] leading-relaxed text-white shadow-neo-sm custom-scrollbar"
+            >
+              {code}
+            </pre>
+          )
+        }
+
+        if (!part.trim()) return null
+
+        return (
+          <div key={i} className="leading-relaxed">
+            <Latex>{part}</Latex>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export function ExamRunner({ test }: { test: TestDefinition }) {
   const router = useRouter()
@@ -55,11 +98,22 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
   const [visited, setVisited] = useState<Record<string, boolean>>({})
   const [timePerQuestion, setTimePerQuestion] = useState<Record<string, number>>({})
   const [remaining, setRemaining] = useState(test.durationMinutes * 60)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [confirmSubmit, setConfirmSubmit] = useState(false)
   const [natDraft, setNatDraft] = useState("")
   const [showCalc, setShowCalc] = useState(false)
   const [showScratchpad, setShowScratchpad] = useState(false)
   const [showExplanation, setShowExplanation] = useState<Record<string, boolean>>({})
+
+  // Bug #7 fix: read an explicit `timerType` field on TestDefinition when present
+  // so the decision is not fragile to ID naming conventions like \"subj-\" prefix.
+  // Falls back to kind/id sniffing only as last resort for backward compatibility.
+  const isUntimedDrill = (
+    test.timerType === "stopwatch" ||
+    test.kind === "subject" ||
+    test.kind === "practice" ||
+    test.id.startsWith("subj-")
+  )
 
   const startedAt = useRef<number>(0)
   const questionEnteredAt = useRef<number>(0)
@@ -123,9 +177,12 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
       wrong: result.wrong,
       skipped: result.skipped,
     }
-    save(attempt)
-
-    // Auto-capture mistakes into StudyStore mistakes collection
+    // Bug #1 fix: await save() so the attempt is persisted before navigating.
+    // Without this, router.push fires before IndexedDB/localStorage write completes,
+    // causing the results page to load with empty data (404 or blank screen).
+    save(attempt).then(() => {
+      router.push(`/results/${attempt.id}`)
+    })
     const store = getStore()
     for (const outcome of result.outcomes) {
       const qid = outcome.question.id
@@ -177,25 +234,26 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
         }
       })
     }
-
-    router.push(`/results/${attempt.id}`)
   }, [current, marked, questions, responses, router, save, test, timePerQuestion])
 
-  /* ---------------- countdown ---------------- */
+  /* ---------------- stopwatch & countdown timers ---------------- */
   useEffect(() => {
-    if (!started || test.kind === "practice") return
+    if (!started) return
     const id = window.setInterval(() => {
-      setRemaining((r) => {
-        if (r <= 1) {
-          window.clearInterval(id)
-          submit() // auto-submit on timeout
-          return 0
-        }
-        return r - 1
-      })
+      setElapsedSeconds((e) => e + 1)
+      if (!isUntimedDrill) {
+        setRemaining((r) => {
+          if (r <= 1) {
+            window.clearInterval(id)
+            submit() // auto-submit on timeout for Full Mocks
+            return 0
+          }
+          return r - 1
+        })
+      }
     }, 1000)
     return () => window.clearInterval(id)
-  }, [started, submit, test.kind])
+  }, [isUntimedDrill, started, submit])
 
   /* ---------------- mark visited + reset NAT draft on navigation ---------------- */
   useEffect(() => {
@@ -401,7 +459,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
   return (
     <div className="flex min-h-dvh flex-col relative z-10">
       {/* top bar */}
-      <header className="sticky top-0 z-30 border-b-3 border-border bg-card shadow-sm">
+      <header className="relative z-30 border-b-3 border-border bg-card shadow-sm md:sticky md:top-0">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-y-3 gap-x-4 px-4 py-3 md:px-8">
           <div className="min-w-0 flex-1 md:flex-none">
             <p className="truncate font-bold text-sm tracking-wide text-foreground" title={test.title}>{test.title}</p>
@@ -441,10 +499,13 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
             </button>
           </div>
 
-          {test.kind === "practice" ? (
-            <div className="border-2 md:border-3 border-[#1CB0F6] bg-[#DDF4FF] px-2 md:px-4 py-1 md:py-1.5 text-center rounded-xl ml-auto mr-2 md:mr-4 flex flex-col justify-center shadow-neo-sm">
-              <p className="font-mono text-[10px] md:text-sm leading-none text-[#1899D6] font-bold">
-                PRACTICE
+          {isUntimedDrill ? (
+            <div className="border-2 md:border-3 border-[#1CB0F6] bg-[#E5F6FF] px-3 md:px-4 py-1 md:py-1.5 text-center rounded-xl ml-auto mr-2 md:mr-4 flex flex-col justify-center shadow-neo-sm">
+              <p className="font-mono text-[14px] md:text-xl font-black leading-none tabular-nums text-[#1899D6]">
+                {formatClock(elapsedSeconds)}
+              </p>
+              <p className="hidden md:block mt-1 font-mono text-[9px] font-black tracking-widest text-[#1899D6] uppercase">
+                ELAPSED TIME
               </p>
             </div>
           ) : (
@@ -473,7 +534,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
             onClick={() => setConfirmSubmit(true)}
             className="hidden md:block shrink-0 neo-btn bg-primary px-5 py-2 font-bold text-sm tracking-wide text-primary-foreground ml-auto sm:ml-0"
           >
-            {test.kind === "practice" ? "Finish Practice" : "Submit Test"}
+            {isUntimedDrill ? "Finish Practice" : "Submit Test"}
           </button>
         </div>
         {/* progress */}
@@ -497,6 +558,12 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                 <span className="border-2 border-border bg-white rounded-md px-2 py-0.5 font-mono text-[10px] font-bold tracking-widest uppercase text-foreground">
                   {current.type}
                 </span>
+                {current.source && (
+                  <span className="bg-[#FFC700] text-[#1F2937] border-2 border-[#1F2937] shadow-neo-sm font-black rounded-full px-3.5 py-1 text-[11px] inline-flex items-center gap-1.5 uppercase tracking-wide">
+                    <Bookmark className="size-3.5 fill-[#1F2937]" strokeWidth={2.5} />
+                    {current.source}
+                  </span>
+                )}
                 <span className="font-mono text-[12px] font-bold tabular-nums text-foreground">
                   {current.marks} mark{current.marks > 1 ? "s" : ""}
                   {current.type === "MCQ" && (
@@ -551,13 +618,29 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
 
               <div className="px-4 py-6 md:px-6 md:py-8">
                 <div className="text-[15px] md:text-[16px] font-medium leading-relaxed text-pretty space-y-4">
-                  <Latex>{current.text}</Latex>
+                  <FormattedContent content={current.text} />
                 </div>
 
                 {current.code && (
-                  <pre className="mt-6 overflow-x-auto border-3 border-border rounded-xl bg-[#1F2937] p-5 font-mono text-[11px] sm:text-[13px] leading-relaxed text-white shadow-neo-sm custom-scrollbar">
-                    {current.code}
-                  </pre>
+                  // Bug #8 fix: only treat code as an SVG diagram if it is a
+                  // self-contained SVG blob (starts with "<svg" WITH a closing "</svg>"
+                  // tag or is a base64 data URI). Raw SVG markup used as text-based
+                  // analysis content should NOT be rendered as a visual image.
+                  (() => {
+                    const c = current.code.trim()
+                    const isSvgImage =
+                      (c.startsWith("<svg") && c.includes("</svg>") && c.length < 50_000) ||
+                      c.startsWith("data:image/svg+xml")
+                    return isSvgImage ? (
+                      <div className="mt-6 my-2 border-3 border-border rounded-xl bg-white p-4 shadow-neo-sm overflow-hidden flex justify-center">
+                        <DiagramRenderer url={c} />
+                      </div>
+                    ) : (
+                      <pre className="mt-6 overflow-x-auto border-3 border-border rounded-xl bg-[#1F2937] p-5 font-mono text-[11px] sm:text-[13px] leading-relaxed text-white shadow-neo-sm custom-scrollbar">
+                        {current.code}
+                      </pre>
+                    )
+                  })()
                 )}
 
                 {/* answer input */}
@@ -658,7 +741,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                       </div>
                       <h4 className="font-mono text-[12px] font-bold uppercase tracking-wider text-primary mb-3 relative z-10">Explanation</h4>
                       <div className="text-[14px] md:text-[15px] font-medium leading-relaxed text-foreground relative z-10 space-y-4 overflow-x-auto">
-                        <Latex>{current.explanation || "No explanation provided for this question."}</Latex>
+                        <FormattedContent content={typeof current.explanation === "string" ? current.explanation : "No explanation provided for this question."} />
                       </div>
                     </div>
                   )}

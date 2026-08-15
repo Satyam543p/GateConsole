@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { ArrowRight, Clock, FileText, Layers, CheckCircle2 } from "lucide-react"
 import type { TestDefinition } from "@/lib/test-types"
 import { useAttempts } from "@/lib/use-attempts"
@@ -106,8 +107,15 @@ function TestCard({ test }: { test: TestDefinition }) {
 }
 
 export function TestHub() {
-  const [filter, setFilter] = useState<Filter>("all")
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+
+  // Read URL params so external links (e.g. the DRILL button on the dashboard)
+  // can deep-link directly into a subject's drill listing.
+  const urlFilter = (searchParams.get("filter") ?? "all") as Filter
+  const urlSubject = searchParams.get("subject")
+
+  const [filter, setFilter] = useState<Filter>(urlFilter)
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(urlSubject)
   
   const TESTS = useTests()
   const { settings } = useSettings()

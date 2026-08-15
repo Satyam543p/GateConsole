@@ -212,6 +212,7 @@ export function getAllTests(): TestDefinition[] {
             durationMinutes: 30,
             description: `Targeted practice on ${sub.name}.`,
             questionIds,
+            timerType: "stopwatch",
           })
         }
       }
@@ -236,6 +237,7 @@ export function getAllTests(): TestDefinition[] {
             durationMinutes: 30,
             description: `Targeted practice on ${ch.name}.`,
             questionIds,
+            timerType: "stopwatch",
           })
         }
       }

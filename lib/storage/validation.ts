@@ -73,7 +73,7 @@ export const RawQuestionSchema = z.object({
   subject: z.string().min(1, "Subject is required"),
   topic: z.string().optional(),
   type: z.enum(["MCQ", "MSQ", "NAT"]),
-  marks: z.union([z.literal(1), z.literal(2), z.literal(1.0), z.literal(2.0)]).optional(),
+  marks: z.union([z.literal(1), z.literal(2), z.literal(4), z.literal(1.0), z.literal(2.0), z.literal(4.0)]).optional(),
   text: z.string().min(5, "Question text must be at least 5 chars"),
   code: z.string().optional(),
   options: z.array(z.string()).optional(),
@@ -230,7 +230,7 @@ export function autoRepairQuestion(raw: any, index: number): any {
   // 2. Coerce numbers
   if (rep.marks !== undefined && rep.marks !== null) {
     const coerced = parseInt(rep.marks, 10)
-    if (coerced === 1 || coerced === 2) rep.marks = coerced
+    if (coerced === 1 || coerced === 2 || coerced === 4) rep.marks = coerced
   }
   if (rep.year !== undefined && rep.year !== null) {
     const coerced = parseInt(rep.year, 10)

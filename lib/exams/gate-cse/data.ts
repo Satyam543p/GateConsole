@@ -92,8 +92,8 @@ export const SUBJECT_WEIGHTAGE: { subject: string; marks: number; note: string }
   { subject: "Computer Networks", marks: 8.5, note: "Ranged 6-11; transport layer share rising" },
   { subject: "Computer Organization & Architecture", marks: 8.0, note: "Ranged 6-11; cache + pipelining dominate" },
   { subject: "Algorithms", marks: 7.5, note: "Ranged 5-11" },
-  { subject: "Databases", marks: 7.0, note: "Ranged 5-9" },
-  { subject: "Theory of Computation", marks: 7.0, note: "Ranged 5-9" },
+  { subject: "DBMS", marks: 7.0, note: "Ranged 5-9" },
+  { subject: "TOC", marks: 7.0, note: "Ranged 5-9" },
   { subject: "Digital Logic", marks: 6.5, note: "Ranged 5-9" },
   { subject: "Compiler Design", marks: 4.5, note: "Ranged 3-7; lowest-yield core subject" },
   { subject: "Removed from syllabus", marks: 0, note: "SE, Web Tech, Graphics — dropped in the 2021 revision" },
@@ -775,7 +775,7 @@ export const TOPICS: Topic[] = [
   // ── Theory of Computation ───────────────────────────────────────────
   {
     id: "toc-fa",
-    subject: "Theory of Computation",
+    subject: "TOC",
     topic: "Finite automata — DFA/NFA, conversions, minimization, equivalence",
     avgMarks: 2.2,
     trend: "Stable",
@@ -789,7 +789,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "toc-regex",
-    subject: "Theory of Computation",
+    subject: "TOC",
     topic: "Regular expressions & regular languages, closure properties",
     avgMarks: 1.8,
     trend: "Stable",
@@ -803,7 +803,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "toc-cfg",
-    subject: "Theory of Computation",
+    subject: "TOC",
     topic: "Context-free grammars & PDA, ambiguity, normal forms, DCFL",
     avgMarks: 1.6,
     trend: "Stable",
@@ -817,7 +817,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "toc-pumping",
-    subject: "Theory of Computation",
+    subject: "TOC",
     topic: "Pumping lemma & non-regularity / non-CFL proofs",
     avgMarks: 0.6,
     trend: "Decreasing",
@@ -831,7 +831,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "toc-tm",
-    subject: "Theory of Computation",
+    subject: "TOC",
     topic: "Turing machines, recursive/RE languages, decidability, Rice's theorem",
     avgMarks: 1.4,
     trend: "Increasing",
@@ -1033,7 +1033,7 @@ export const TOPICS: Topic[] = [
   // ── Databases ───────────────────────────────────────────────────────
   {
     id: "db-er",
-    subject: "Databases",
+    subject: "DBMS",
     topic: "ER model, relational model, keys & integrity constraints",
     avgMarks: 0.9,
     trend: "Stable",
@@ -1047,7 +1047,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "db-ra",
-    subject: "Databases",
+    subject: "DBMS",
     topic: "Relational algebra, tuple relational calculus",
     avgMarks: 1.1,
     trend: "Stable",
@@ -1061,7 +1061,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "db-sql",
-    subject: "Databases",
+    subject: "DBMS",
     topic: "SQL — joins, aggregation, nested & correlated queries, NULL semantics",
     avgMarks: 1.7,
     trend: "Stable",
@@ -1075,7 +1075,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "db-norm",
-    subject: "Databases",
+    subject: "DBMS",
     topic: "Functional dependencies, closure, candidate keys, normalization to BCNF",
     avgMarks: 1.6,
     trend: "Stable",
@@ -1089,7 +1089,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "db-txn",
-    subject: "Databases",
+    subject: "DBMS",
     topic: "Transactions & concurrency control — serializability, 2PL, timestamp ordering",
     avgMarks: 1.9,
     trend: "Increasing",
@@ -1103,7 +1103,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "db-index",
-    subject: "Databases",
+    subject: "DBMS",
     topic: "Indexing — B and B+ trees, dense/sparse indexes, disk hashing",
     avgMarks: 1.3,
     trend: "Stable",
@@ -1117,7 +1117,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "db-recovery",
-    subject: "Databases",
+    subject: "DBMS",
     topic: "File organization, logging & recovery",
     avgMarks: 0.4,
     trend: "Decreasing",

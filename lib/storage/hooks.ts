@@ -98,7 +98,7 @@ import { getActiveExamId, getQuestions, getSubjectsForExam } from "../exams/regi
 export interface UseAttemptsResult {
   attempts: StoredAttempt[]
   ready: boolean
-  save: (attempt: StoredAttempt) => void
+  save: (attempt: StoredAttempt) => Promise<void>
   remove: (id: string) => void
   clear: () => void
 }
@@ -112,13 +112,14 @@ export function useAttempts(): UseAttemptsResult {
   const { data, loading, put, remove: removeItem } = useCollection(COLLECTIONS.attempts, query)
 
   const save = useCallback(
-    (attempt: StoredAttempt) => {
+    (attempt: StoredAttempt): Promise<void> => {
       const stamped: StoredAttempt = {
         ...attempt,
         userId: attempt.userId ?? LOCAL_USER_ID,
         examId: attempt.examId ?? activeExamId,
       }
-      put(stamped)
+      // Bug #1 fix: return the promise so callers can await it before navigating
+      return put(stamped)
     },
     [put, activeExamId]
   )
@@ -275,6 +276,8 @@ export function useDailyChallenge(): UseDailyChallengeResult {
     [todayRecord, questionMap],
   )
 
+  const rerollCountRef = useRef(0)
+
   // Seed today's challenge once per day, after questions are ready.
   const seededFor = useRef<string | null>(null)
   useEffect(() => {
@@ -282,7 +285,7 @@ export function useDailyChallenge(): UseDailyChallengeResult {
     if (todayRecord) return
     if (seededFor.current === today) return
     seededFor.current = today
-    const qid = seedChallengeQuestionId(questions, SUBJECTS, subjectProgress)
+    const qid = seedChallengeQuestionId(questions, SUBJECTS, subjectProgress, today, 0)
     if (qid) {
       void put({
         userId: LOCAL_USER_ID,
@@ -350,15 +353,16 @@ export function useDailyChallenge(): UseDailyChallengeResult {
   const reroll = useCallback(async () => {
     if (!todayRecord || todayRecord.solved) return
     const currentId = todayRecord.questionId
-    let qid = seedChallengeQuestionId(questions, SUBJECTS, subjectProgress)
-    // Avoid instantly re-rolling onto the same question when alternatives exist.
+    rerollCountRef.current += 1
+    let qid = seedChallengeQuestionId(questions, SUBJECTS, subjectProgress, today, rerollCountRef.current)
     if (qid === currentId && questions.length > 1) {
-      qid = seedChallengeQuestionId(questions, SUBJECTS, subjectProgress)
+      rerollCountRef.current += 1
+      qid = seedChallengeQuestionId(questions, SUBJECTS, subjectProgress, today, rerollCountRef.current)
     }
     if (qid && qid !== currentId) {
       await put({ ...todayRecord, questionId: qid } satisfies DailyChallenge)
     }
-  }, [todayRecord, questions, SUBJECTS, subjectProgress, put])
+  }, [todayRecord, questions, SUBJECTS, subjectProgress, today, put])
 
   return {
     record: todayRecord,

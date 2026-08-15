@@ -305,7 +305,7 @@ export function ConsoleDashboard() {
                           <div className="flex flex-col justify-center items-center h-full">
                             <span className="md:hidden text-[9px] font-black uppercase text-secondary-text mb-1.5">Practice</span>
                             <Link
-                              href={`/tests/subj-${sub.id}?mode=practice`}
+                              href={`/tests?filter=subject&subject=${sub.id}`}
                               title={`Drill ${sub.name}`}
                               aria-label={`Drill ${sub.name}`}
                               className="inline-flex items-center justify-center gap-1.5 size-9 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-[#FF9600] border-[3px] border-[#1F2937] text-white rounded-[12px] font-heading font-black text-[11px] md:text-[13px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase mx-auto"

@@ -17,3 +17,24 @@ AGENTS.md
 CLAUDE.md
 phase.md
 prompt.md
+
+# Backup & Temporary files
+*.bak
+*.bak*
+*.tmp
+*.log
+review_diff.txt
+scratch/
+*.py
+tsconfig.tsbuildinfo
+scratch_*
+*.txt
+check_snippets.js
+import_subject_dataset.js
+inject.js
+pds-dataset.json
+purge_base_template_qs.ts
+test-validation.ts
+test_hash.js
+upgrade_concepts.js
+
