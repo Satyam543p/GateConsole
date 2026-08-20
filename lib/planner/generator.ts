@@ -91,9 +91,9 @@ export function calculateMultiMetricReadiness(
   if (mistakes.length - resolvedMistakes.length > 0) {
     const unresolved = mistakes.length - resolvedMistakes.length
     levers.push({
-      label: `Resolve ${unresolved} pending error entries in Mistake Notebook`,
+      label: `Review ${unresolved} pending error entries in your To-Do list`,
       impact: `+${Math.min(15, unresolved * 3)}% accuracy boost`,
-      link: "/mistakes",
+      link: "/todo",
     })
   }
 

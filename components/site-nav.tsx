@@ -12,7 +12,8 @@ import {
   Settings,
   Flame,
   Target,
-  UserCircle2
+  UserCircle2,
+  Calendar,
 } from "lucide-react"
 import { useSettings, useDailyChallenge } from "@/lib/storage/hooks"
 import { EXAMS, GATE_DOMAINS } from "@/lib/exams/registry"
@@ -20,9 +21,10 @@ import { Logo } from "@/components/logo"
 
 const NAV_ITEMS = [
   { href: "/", label: "Today", icon: Home },
+  { href: "/todo", label: "To-Do", icon: ClipboardList },
+  { href: "/tests", label: "Tests", icon: Target },
   { href: "/map", label: "Concept Map", icon: Network },
-  { href: "/tests", label: "Tests", icon: ClipboardList },
-  { href: "/progress", label: "Progress", icon: Target },
+  { href: "/progress", label: "Progress", icon: BookOpen },
 ]
 
 export function SiteNav() {
@@ -45,7 +47,7 @@ export function SiteNav() {
       {/* DESKTOP SIDEBAR (Hidden on Mobile) */}
       <aside 
         className={cn(
-          "hidden md:flex flex-col fixed inset-y-0 left-0 z-50 bg-white border-r-[3px] border-[#1F2937] transition-all duration-150 ease-in-out group overflow-hidden",
+          "hidden md:flex flex-col fixed inset-y-0 left-0 z-50 bg-white border-r-[3px] border-[#1F2937] transition-all duration-150 ease-in-out group overflow-hidden print:hidden",
           isExpanded ? "w-[180px]" : "w-[64px]"
         )}
         onMouseEnter={() => setIsExpanded(true)}
@@ -162,19 +164,35 @@ export function SiteNav() {
       </aside>
 
       {/* MOBILE TOP HEADER (Hidden on Desktop) */}
-      <header className="md:hidden fixed top-0 inset-x-0 h-[60px] bg-white/90 backdrop-blur-md border-b-[2px] border-[#1F2937]/10 z-50 flex items-center justify-between px-4">
+      <header className="md:hidden fixed top-0 inset-x-0 h-[60px] bg-white/95 backdrop-blur-md border-b-[3px] border-[#1F2937] z-50 flex items-center justify-between px-3 shadow-neo-sm print:hidden">
         <Logo isExpanded={true} />
-        <div className="flex items-center gap-1.5 bg-[#FF9600] border-[2px] border-[#1F2937] text-white px-2 py-1 rounded-[10px] shadow-neo-sm">
-          <Flame className="size-4 fill-white text-white" strokeWidth={2} />
-          <span className="font-black text-xs leading-none">
-            {dailyLoading ? "…" : dailyStreak}
-          </span>
+        
+        <div className="flex items-center gap-2">
+          {/* STREAK BADGE */}
+          <div className="flex items-center gap-1.5 bg-[#FF9600] border-[2px] border-[#1F2937] text-white px-3 py-1.5 rounded-full shadow-neo-xs">
+            <Flame className="size-4 fill-white text-white animate-pulse" strokeWidth={2} />
+            <span className="font-heading font-black text-xs leading-none tracking-wide">
+              {dailyLoading ? "…" : `${dailyStreak} Day${dailyStreak === 1 ? "" : "s"}`}
+            </span>
+          </div>
+
+          {/* PROFILE & SETTINGS BUTTON */}
+          <Link
+            href="/settings"
+            title="Profile & Settings"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-[#E5F6FF] border-[2px] border-[#1F2937] hover:bg-[#1CB0F6] hover:text-white text-[#1899D6] shadow-neo-xs active:translate-y-0.5 transition-all shrink-0"
+          >
+            <UserCircle2 className="size-4" strokeWidth={2.5} />
+            <span className="font-heading font-black text-[10px] uppercase tracking-wider truncate max-w-[60px]">
+              {currentProfile?.name?.split(' ')[0] || "Guest"}
+            </span>
+          </Link>
         </div>
       </header>
 
-      {/* MOBILE BOTTOM TAB BAR (Hidden on Desktop) */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 h-[65px] bg-white/90 backdrop-blur-md border-t-[2px] border-[#1F2937]/10 z-50 flex items-center justify-around px-2 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
-        {[...NAV_ITEMS, { href: "/settings", label: "Settings", icon: Settings }].map((item) => {
+      {/* MOBILE BOTTOM TAB BAR (5 Core Hubs - Hidden on Desktop) */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 h-[64px] bg-white/95 backdrop-blur-md border-t-[2px] border-[#1F2937]/15 z-50 flex items-center justify-around px-1 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.06)] select-none print:hidden">
+        {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
           const Icon = item.icon
           
@@ -183,18 +201,18 @@ export function SiteNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex flex-col items-center justify-center w-full h-full space-y-1.5 transition-all duration-200 active:scale-95",
-                isActive ? "text-primary" : "text-[#94A3B8] hover:text-[#64748B]"
+                "relative flex flex-col items-center justify-center flex-1 h-full py-1 transition-all duration-200 active:scale-95",
+                isActive ? "text-primary font-black" : "text-[#94A3B8] hover:text-[#64748B]"
               )}
             >
               <div className={cn(
-                "absolute top-0 inset-x-0 h-1 bg-primary rounded-b-full transition-transform duration-300 origin-top",
+                "absolute top-0 inset-x-2 h-1 bg-primary rounded-b-full transition-transform duration-300 origin-top",
                 isActive ? "scale-y-100" : "scale-y-0"
               )} />
-              <Icon className={cn("size-[24px] mt-1 transition-all duration-300", isActive && "text-primary drop-shadow-sm")} strokeWidth={isActive ? 2.5 : 2} />
+              <Icon className={cn("size-[22px] transition-all duration-300", isActive ? "text-primary drop-shadow-sm scale-105" : "text-[#94A3B8]")} strokeWidth={isActive ? 2.5 : 2} />
               <span className={cn(
-                "text-[10px] font-bold tracking-tight whitespace-nowrap transition-all duration-300",
-                isActive ? "text-primary" : "text-[#94A3B8]"
+                "text-[10px] font-heading font-bold tracking-tight whitespace-nowrap transition-all duration-300 mt-0.5",
+                isActive ? "text-primary font-black" : "text-[#94A3B8]"
               )}>
                 {item.label === "Concept Map" ? "Map" : item.label}
               </span>

@@ -25,7 +25,21 @@ export default async function TestPage({
 }) {
   const { testId } = await params
   const { mode } = await searchParams
-  const test = getTest(testId)
+  let test = getTest(testId)
+  
+  // Dynamic fallback for instant remedial and custom-generated practice drills
+  if (!test && (testId.startsWith("remedial-") || testId.startsWith("custom-"))) {
+    test = {
+      id: testId,
+      title: testId.startsWith("remedial-") ? "Instant Remedial Drill" : "Custom Practice Drill",
+      kind: "practice",
+      durationMinutes: 45,
+      timerType: "stopwatch",
+      description: "Targeted remedial practice session focusing on recently missed questions and weak concepts.",
+      questionIds: [],
+    }
+  }
+
   if (!test) notFound()
 
   const finalTest = { ...test }

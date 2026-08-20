@@ -12,8 +12,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
     <div 
       className={cn(
-        "flex-1 flex flex-col h-dvh overflow-y-auto overflow-x-hidden relative bg-transparent z-10",
-        !isTestRoute && "md:ml-16 pt-[60px] md:pt-0 pb-[65px] md:pb-0"
+        "w-full flex-1 flex flex-col relative bg-transparent z-10 min-h-screen",
+        !isTestRoute && "md:ml-16 pt-[60px] md:pt-0 pb-[88px] md:pb-12"
       )}
     >
       {children}

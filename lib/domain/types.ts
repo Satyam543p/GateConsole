@@ -178,6 +178,7 @@ export interface Question {
   verified: boolean
   verificationSource?: string
   confidence?: "low" | "medium" | "high"
+  provenance?: string
   tags?: string[]
   imageUrl?: string
   answerAliases?: string[]
@@ -319,6 +320,7 @@ export interface PlanBlock {
   reason: string             // one-sentence plain-English explanation
   completed: boolean
   overridden?: boolean       // user manually changed this block
+  isCustom?: boolean         // student custom added to-do task
 }
 
 export interface WeeklyAvailability {

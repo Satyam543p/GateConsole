@@ -46,27 +46,25 @@ export function StaleBackupBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="border-b border-border bg-muted/60 px-4 py-2.5 text-sm"
+      className="hidden sm:block border-b-2 border-[#1F2937]/15 bg-[#FFF9E6] px-3 py-2 text-xs"
     >
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 md:px-8">
-        <p className="font-mono text-[11px] text-muted-foreground">
-          <span className="text-primary">Backup reminder</span>
-          {" — "}
-          your last export is more than {STALE_DAYS} days old.{" "}
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-1 sm:px-4">
+        <p className="font-mono text-[11px] sm:text-xs font-bold text-[#B36900] truncate">
+          <span className="font-black text-[#1F2937]">Backup Reminder:</span> Last export &gt; {STALE_DAYS} days ago.{" "}
           <Link
             href="/settings"
-            className="underline underline-offset-2 hover:text-foreground transition-colors"
+            className="underline underline-offset-2 font-black hover:text-[#1F2937] transition-colors ml-1"
           >
-            Export now
+            Export Now →
           </Link>
         </p>
         <button
           type="button"
           aria-label="Dismiss backup reminder"
           onClick={dismiss}
-          className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-2 -m-2"
+          className="shrink-0 text-[#B36900] hover:text-[#1F2937] transition-colors p-1"
         >
-          <X className="size-3.5" aria-hidden="true" />
+          <X className="size-4" aria-hidden="true" />
         </button>
       </div>
     </div>

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 
 const Card = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { accentBorder?: 'blue' | 'pink' | 'green' }
+  React.HTMLAttributes<HTMLDivElement> & { accentBorder?: 'blue' | 'pink' | 'green' | 'amber' }
 >(({ className, accentBorder, ...props }, ref) => {
   return (
     <div
@@ -13,6 +13,7 @@ const Card = React.forwardRef<
         accentBorder === 'blue' && "border-[#1CB0F6]",
         accentBorder === 'pink' && "border-[#CE82FF]",
         accentBorder === 'green' && "border-[#58CC02]",
+        accentBorder === 'amber' && "border-[#FF9600]",
         className
       )}
       {...props}

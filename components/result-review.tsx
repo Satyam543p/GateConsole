@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState } from "react"
-import { Check, ChevronLeft, Clock, Flag, Minus, RotateCcw, X, Tag, MessageSquare, CheckCircle2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useState } from "react"
+import { Check, ChevronLeft, Clock, Flag, Minus, RotateCcw, X, Tag, MessageSquare, CheckCircle2, Zap, Hourglass, AlertOctagon, ShieldAlert, Sparkles, BookOpen, Flame, ArrowRight } from "lucide-react"
 import { type QuestionOutcome, type StoredAttempt, formatClock, scoreAttempt } from "@/lib/test-types"
 import { getAttempt } from "@/lib/use-attempts"
 import { useQuestionBank, useCollection } from "@/lib/storage/hooks"
@@ -10,6 +11,8 @@ import { getStore, COLLECTIONS } from "@/lib/storage/store"
 import type { MistakeCause, MistakeEntry } from "@/lib/domain/types"
 import { LOCAL_USER_ID, GATE_CSE_EXAM_ID } from "@/lib/domain/types"
 import { cn } from "@/lib/utils"
+import Latex from "react-latex-next"
+import { FormattedContent, InlineFormatted } from "@/components/formatted-content"
 
 type OutcomeFilter = "all" | "correct" | "wrong" | "skipped" | "flagged"
 
@@ -47,6 +50,7 @@ function correctLabel(o: QuestionOutcome): string {
 }
 
 export function ResultReview({ attemptId }: { attemptId: string }) {
+  const router = useRouter()
   const [attempt, setAttempt] = useState<StoredAttempt | null>(null)
   const [attemptReady, setAttemptReady] = useState(false)
   const { questionMap, loading: bankLoading } = useQuestionBank()
@@ -94,6 +98,38 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
     })
   }, [attemptId])
 
+  const scoredResult = useMemo(() => {
+    if (!attempt) return null
+    const finalQuestions = (attempt.questionIds ?? [])
+      .map((id) => questionMap.get(id))
+      .filter((q): q is NonNullable<typeof q> => Boolean(q))
+    return scoreAttempt(finalQuestions, attempt.responses, attempt.timePerQuestion)
+  }, [attempt, questionMap])
+
+  const remedialQuestionIds = useMemo(() => {
+    if (!scoredResult || !attempt) return []
+    const wrongQids = scoredResult.outcomes
+      .filter((o) => (o.attempted && !o.correct) || (attempt?.timePerQuestion?.[o.question.id] ?? 0) > 180)
+      .map((o) => o.question.id)
+
+    const missedConcepts = new Set<string>()
+    for (const qid of wrongQids) {
+      const q = questionMap.get(qid)
+      q?.conceptIds?.forEach((cid) => missedConcepts.add(cid))
+    }
+
+    const siblingQids: string[] = []
+    for (const [qid, q] of questionMap.entries()) {
+      if (wrongQids.includes(qid)) continue
+      if (q.conceptIds && q.conceptIds.some((cid) => missedConcepts.has(cid))) {
+        siblingQids.push(qid)
+        if (siblingQids.length >= 8) break
+      }
+    }
+
+    return Array.from(new Set([...wrongQids, ...siblingQids]))
+  }, [attempt?.timePerQuestion, questionMap, scoredResult])
+
   if (!attemptReady || bankLoading) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-20 md:px-8">
@@ -120,13 +156,69 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
     )
   }
 
+  if (!scoredResult) return null
+
   // Replay the exact question list that was served, in order.
   const finalQuestions = (attempt.questionIds ?? [])
     .map((id) => questionMap.get(id))
     .filter((q): q is NonNullable<typeof q> => Boolean(q))
 
-  const scoredResult = scoreAttempt(finalQuestions, attempt.responses, attempt.timePerQuestion)
   const markedSet = new Set(attempt.markedForReview)
+
+
+  let fastAccurate = 0
+  let slowAccurate = 0
+  let fastWrong = 0
+  let slowWrong = 0
+  let timeTrapSeconds = 0
+  const timeTrapQuestions: { question: typeof scoredResult.outcomes[0]["question"]; timeSpent: number; score: number }[] = []
+  const missedConceptIds = new Set<string>()
+
+  for (const o of scoredResult.outcomes) {
+    const timeSpent = attempt.timePerQuestion?.[o.question.id] ?? 0
+    const threshold = o.question.marks === 1 ? 150 : 240 // 2.5m for 1M, 4m for 2M
+
+    if (!o.correct && o.question.conceptIds) {
+      for (const cid of o.question.conceptIds) missedConceptIds.add(cid)
+    }
+
+    if (o.correct) {
+      if (timeSpent <= threshold) fastAccurate++
+      else slowAccurate++
+    } else if (o.attempted) {
+      if (timeSpent <= threshold) {
+        fastWrong++
+      } else {
+        slowWrong++
+        timeTrapSeconds += timeSpent
+        timeTrapQuestions.push({ question: o.question, timeSpent, score: o.score })
+      }
+    } else if (timeSpent > threshold) {
+      // Skipped after wasting time
+      timeTrapSeconds += timeSpent
+      timeTrapQuestions.push({ question: o.question, timeSpent, score: 0 })
+    }
+  }
+
+  const pacingAnalysis = {
+    fastAccurate,
+    slowAccurate,
+    fastWrong,
+    slowWrong,
+    timeTrapSeconds,
+    timeTrapQuestions,
+    missedConceptCount: missedConceptIds.size,
+  }
+
+
+  const handleLaunchRemedialDrill = () => {
+    if (remedialQuestionIds.length === 0) return
+    const remedialTestId = `remedial-${Date.now()}`
+    try {
+      localStorage.setItem(`remedial_qids_${remedialTestId}`, JSON.stringify(remedialQuestionIds))
+    } catch {}
+    router.push(`/tests/${remedialTestId}?mode=practice`)
+  }
 
   const outcomes = scoredResult.outcomes.filter((o) => {
     if (filter === "correct") return o.correct
@@ -280,10 +372,144 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
         </div>
       </section>
 
+      {/* 02 / Diagnostic & Pacing Audit */}
+      {pacingAnalysis && (
+        <section className="border-b-3 border-border bg-white">
+          <div className="mx-auto max-w-[1600px] px-4 py-10 md:px-8 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="font-mono text-xs font-bold tracking-widest text-[#FF9600] uppercase">
+                  02 / diagnostic &amp; pacing audit
+                </p>
+                <h2 className="text-2xl font-heading font-black text-foreground mt-1">
+                  Speed vs. Accuracy Pacing Matrix
+                </h2>
+              </div>
+              
+              {pacingAnalysis.timeTrapSeconds > 0 && (
+                <div className="flex items-center gap-2 bg-[#FFE5E5] border-2 border-[#FF4B4B] px-4 py-2 rounded-xl text-[#FF4B4B] font-mono text-xs font-black shadow-neo-sm">
+                  <AlertOctagon className="size-4 shrink-0" />
+                  <span>
+                    {formatClock(pacingAnalysis.timeTrapSeconds)} Lost to {pacingAnalysis.timeTrapQuestions.length} Time-Traps
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* 4 Quadrants Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Fast & Accurate */}
+              <div className="border-3 border-[#58CC02] bg-[#F4FDF0] rounded-2xl p-5 shadow-neo-sm relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-black uppercase text-[#58CC02] tracking-wider flex items-center gap-1.5">
+                    <Zap className="size-4" /> Solid Mastery
+                  </span>
+                  <span className="text-2xl font-mono font-black text-[#58CC02]">
+                    {pacingAnalysis.fastAccurate}
+                  </span>
+                </div>
+                <h3 className="font-heading font-bold text-foreground mt-2 text-sm">
+                  Fast &amp; Accurate
+                </h3>
+                <p className="text-xs text-secondary-text mt-1 leading-relaxed">
+                  Solved quickly within expected solve-time with full accuracy. Keep this rhythm.
+                </p>
+              </div>
+
+              {/* Slow & Accurate */}
+              <div className="border-3 border-[#1CB0F6] bg-[#F0F9FF] rounded-2xl p-5 shadow-neo-sm relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-black uppercase text-[#1CB0F6] tracking-wider flex items-center gap-1.5">
+                    <Hourglass className="size-4" /> Needs Polish
+                  </span>
+                  <span className="text-2xl font-mono font-black text-[#1CB0F6]">
+                    {pacingAnalysis.slowAccurate}
+                  </span>
+                </div>
+                <h3 className="font-heading font-bold text-foreground mt-2 text-sm">
+                  Slow &amp; Accurate
+                </h3>
+                <p className="text-xs text-secondary-text mt-1 leading-relaxed">
+                  Correct but consumed heavy clock. Practice standard shortcuts to reduce solve time.
+                </p>
+              </div>
+
+              {/* Fast & Wrong */}
+              <div className="border-3 border-[#FF9600] bg-[#FFF8EE] rounded-2xl p-5 shadow-neo-sm relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-black uppercase text-[#FF9600] tracking-wider flex items-center gap-1.5">
+                    <Flame className="size-4" /> Rushed / Silly
+                  </span>
+                  <span className="text-2xl font-mono font-black text-[#FF9600]">
+                    {pacingAnalysis.fastWrong}
+                  </span>
+                </div>
+                <h3 className="font-heading font-bold text-foreground mt-2 text-sm">
+                  Fast &amp; Wrong
+                </h3>
+                <p className="text-xs text-secondary-text mt-1 leading-relaxed">
+                  Answered quickly but lost marks. Check for misread stems or careless calculation slips.
+                </p>
+              </div>
+
+              {/* Slow & Wrong (Time Traps) */}
+              <div className="border-3 border-[#FF4B4B] bg-[#FFF2F2] rounded-2xl p-5 shadow-neo-sm relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-black uppercase text-[#FF4B4B] tracking-wider flex items-center gap-1.5">
+                    <ShieldAlert className="size-4" /> Critical Time-Traps
+                  </span>
+                  <span className="text-2xl font-mono font-black text-[#FF4B4B]">
+                    {pacingAnalysis.slowWrong}
+                  </span>
+                </div>
+                <h3 className="font-heading font-bold text-foreground mt-2 text-sm">
+                  Slow &amp; Wrong
+                </h3>
+                <p className="text-xs text-secondary-text mt-1 leading-relaxed">
+                  Heavy time investment with zero return. Priority rule: Learn to recognize &amp; skip earlier.
+                </p>
+              </div>
+            </div>
+
+            {/* Strategic Remedial Action Bar */}
+            <div className="border-3 border-border rounded-2xl p-5 bg-[#FAFBFF] shadow-neo-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h4 className="font-heading font-bold text-foreground text-sm flex items-center gap-2">
+                  <Sparkles className="size-4 text-[#CE82FF]" />
+                  Remedial Strategy: {scoredResult.wrong} Mistake{scoredResult.wrong === 1 ? "" : "s"} &amp; {pacingAnalysis.missedConceptCount} Linked Concept{pacingAnalysis.missedConceptCount === 1 ? "" : "s"}
+                </h4>
+                <p className="text-xs text-secondary-text mt-1">
+                  Tag error causes below to log them into your Mistake Notebook and update your SM-2 flashcard priorities.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                {remedialQuestionIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleLaunchRemedialDrill}
+                    className="neo-btn bg-[#58CC02] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-neo-sm hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <Zap className="size-3.5 fill-white" /> Launch Remedial Drill ({remedialQuestionIds.length} Qs)
+                  </button>
+                )}
+
+                <Link
+                  href="/map"
+                  className="neo-btn bg-[#1CB0F6] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5"
+                >
+                  Concept Map <ArrowRight className="size-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* per-question review */}
       <section className="mx-auto max-w-[1600px] px-4 py-10 md:px-8">
         <div className="flex flex-wrap items-center gap-4">
-          <p className="font-mono text-xs font-bold tracking-widest text-primary uppercase">02 / question review</p>
+          <p className="font-mono text-xs font-bold tracking-widest text-primary uppercase">03 / question review</p>
           <div className="ml-auto flex flex-wrap gap-2">
             {(
               [
@@ -368,9 +594,9 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
                 </div>
 
                 <div className="px-5 py-6">
-                  <p className="text-[16px] font-medium leading-relaxed text-pretty">{q.text}</p>
+                  <FormattedContent content={q.text} />
                   {q.code && (
-                    <pre className="mt-4 overflow-x-auto border-3 border-border rounded-xl bg-[#1F2937] p-5 font-mono text-[11px] sm:text-[13px] leading-relaxed text-white shadow-neo-sm custom-scrollbar">
+                    <pre className="mt-4 overflow-x-auto border-[3px] border-border rounded-xl bg-[#1F2937] p-5 font-mono text-[11px] sm:text-[13px] leading-relaxed text-white shadow-neo-sm custom-scrollbar">
                       {q.code}
                     </pre>
                   )}
@@ -408,7 +634,9 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
                             <span className="mt-0.5 font-mono text-[11px] font-bold text-muted-foreground border-2 border-muted-foreground/30 rounded-md px-1.5 py-0.5">
                               {String.fromCharCode(65 + i)}
                             </span>
-                            <span className="flex-1 text-pretty ml-1">{opt}</span>
+                            <span className="flex-1 text-pretty ml-1">
+                              <InlineFormatted text={opt} />
+                            </span>
                             {isRight && <Check className="mt-1 size-4 shrink-0 text-[#58CC02]" strokeWidth={3} aria-label="Correct option" />}
                             {chose && !isRight && (
                               <X className="mt-1 size-4 shrink-0 text-[#FF4B4B]" strokeWidth={3} aria-label="Your incorrect choice" />
@@ -430,12 +658,10 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
                         {expanded ? "Hide solution" : "Show solution"}
                       </button>
                       {expanded && (
-                        <div className="mt-4 border-3 border-[#1CB0F6] bg-[#DDF4FF] p-5 rounded-xl shadow-neo-sm relative overflow-hidden">
+                        <div className="mt-4 border-[3px] border-[#1CB0F6] bg-[#DDF4FF] p-5 rounded-xl shadow-neo-sm relative overflow-hidden">
                           <div className="absolute top-0 right-0 w-20 h-20 bg-[#1899D6] rounded-bl-[100px] opacity-10 pointer-events-none" />
                           <h4 className="font-mono text-[11px] font-bold tracking-widest text-[#1899D6] uppercase mb-2">Explanation</h4>
-                          <p className="text-[15px] font-medium leading-relaxed text-foreground text-pretty">
-                            {q.explanation}
-                          </p>
+                          <FormattedContent content={q.explanation} />
                           {q.source && (
                             <p className="mt-3 font-mono text-[10px] font-bold text-[#1899D6] opacity-80">source: {q.source}</p>
                           )}
@@ -444,69 +670,6 @@ export function ResultReview({ attemptId }: { attemptId: string }) {
                     </div>
                   )}
 
-                  {/* Mistake Notebook Tagging Card */}
-                  {(!o.correct || mistakesList.some((m) => m.questionId === q.id)) && (
-                    <div className="mt-8 border-t-3 border-border pt-6 space-y-5">
-                      <div className="flex items-center justify-between font-mono text-[11px] font-bold text-foreground uppercase tracking-wider">
-                        <span className="flex items-center gap-2">
-                          <Tag className="size-4 text-[#CE82FF]" aria-hidden="true" />
-                          Mistake Notebook Entry
-                        </span>
-                        {mistakesList.find((m) => m.questionId === q.id) && (
-                          <button
-                            type="button"
-                            onClick={() => handleToggleResolved(q.id)}
-                            className={cn(
-                              "px-3 py-1 min-h-11 border-2 text-[10px] uppercase font-bold transition-all shadow-neo-sm rounded-md",
-                              mistakesList.find((m) => m.questionId === q.id)?.resolved
-                                ? "border-[#58CC02] bg-[#E5F9D6] text-[#58CC02]"
-                                : "border-border bg-white text-muted-foreground hover:-translate-y-0.5"
-                            )}
-                          >
-                            {mistakesList.find((m) => m.questionId === q.id)?.resolved ? "Resolved" : "Unresolved"}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Cause Tag Selector */}
-                      <div>
-                        <p className="font-mono text-[11px] font-bold text-muted-foreground mb-3">Tag Cause of Error:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {MISTAKE_CAUSES.map((c) => {
-                            const existingM = mistakesList.find((m) => m.questionId === q.id)
-                            const isSelected = existingM?.cause === c.value
-                            return (
-                              <button
-                                key={c.value}
-                                type="button"
-                                onClick={() => handleTagCause(q.id, c.value)}
-                                className={cn(
-                                  "border-2 px-3 py-1.5 min-h-11 rounded-lg font-mono text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-neo-sm hover:-translate-y-0.5",
-                                  isSelected
-                                    ? "border-[#FF9600] bg-[#FFF2DE] text-[#B36900]"
-                                    : "border-border bg-white text-muted-foreground"
-                                )}
-                              >
-                                <span className="opacity-60">[{c.key}]</span>
-                                <span>{c.label}</span>
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Note Input */}
-                      <div>
-                        <input
-                          type="text"
-                          defaultValue={mistakesList.find((m) => m.questionId === q.id)?.note || ""}
-                          onBlur={(e) => handleUpdateNote(q.id, e.target.value)}
-                          placeholder="Add a personal reflection note for this mistake..."
-                          className="w-full border-3 rounded-xl border-border shadow-neo-sm bg-background px-4 py-3 font-mono text-[13px] font-bold text-foreground placeholder:text-muted-foreground focus:border-[#1CB0F6] focus:outline-none transition-colors"
-                        />
-                      </div>
-                    </div>
-                  )}
                 </div>
               </li>
             )

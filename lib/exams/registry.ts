@@ -47,9 +47,10 @@ export const EXAMS = [
 ]
 
 export const GATE_DOMAINS = [
-  { id: "cse", name: "Computer Science" },
+  { id: "cse", name: "Computer Science & IT" },
+  { id: "da", name: "Data Science & AI" },
+  { id: "ece", name: "Electronics & Communication" },
   { id: "ee", name: "Electrical" },
-  { id: "ece", name: "Electronics" },
   { id: "me", name: "Mechanical" },
   { id: "ce", name: "Civil" },
 ]
@@ -88,7 +89,34 @@ export const GATE_CSE_EXAM: ExamDescriptor = {
   },
 }
 
+export const GATE_DA_EXAM: ExamDescriptor = {
+  id: "gate-da",
+  name: "GATE Data Science & Artificial Intelligence",
+  shortName: "GATE DA",
+  totalMarks: 100,
+  durationMinutes: 180,
+  totalQuestions: 65,
+  examDate: "2026-02-01",
+  markingRules: {
+    mcqNegativeFraction: 1 / 3,
+    msqAllOrNothing: true,
+    msqNegative: false,
+    natNegative: false,
+  },
+}
+
 export const ACTIVE_EXAM = GATE_CSE_EXAM
+
+export function getExamDescriptor(activeExamId: string): ExamDescriptor {
+  switch (activeExamId) {
+    case "gate-cse":
+      return GATE_CSE_EXAM
+    case "gate-da":
+      return GATE_DA_EXAM
+    default:
+      return GATE_CSE_EXAM
+  }
+}
 
 // ─── Helper Functions ───────────────────────────────────────────────────────
 

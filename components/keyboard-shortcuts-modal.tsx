@@ -66,13 +66,12 @@ export function KeyboardShortcutsModal({
 
         const routes: Record<string, string> = {
           h: "/",
-          p: "/plan",
+          d: "/todo",
           a: "/analysis",
           c: "/map",
           r: "/revise",
           f: "/formulas",
           t: "/tests",
-          m: "/mistakes",
           s: "/settings",
           i: "/import",
         }
@@ -124,8 +123,8 @@ export function KeyboardShortcutsModal({
                 <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g h</kbd>
               </li>
               <li className="flex items-center justify-between">
-                <span>Adaptive Planner</span>
-                <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g p</kbd>
+                <span>To-Do List</span>
+                <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g d</kbd>
               </li>
               <li className="flex items-center justify-between">
                 <span>Priority Matrix</span>
@@ -145,12 +144,9 @@ export function KeyboardShortcutsModal({
               </li>
               <li className="flex items-center justify-between">
                 <span>Tests</span>
-                <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g t</kbd>
+                <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g e</kbd>
               </li>
-              <li className="flex items-center justify-between">
-                <span>Mistake Notebook</span>
-                <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g m</kbd>
-              </li>
+
             </ul>
           </div>
 

@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Latex from "react-latex-next"
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Flag, X, Calculator as CalcIcon, FileEdit, Target, Bookmark } from "lucide-react"
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Flag, X, Calculator as CalcIcon, FileEdit, Target, Bookmark, Play, FileText } from "lucide-react"
 import { DiagramRenderer } from "@/components/diagram-renderer"
 
 import { type Response, type StoredAttempt as LegacyStoredAttempt, type TestDefinition, formatClock, isAttempted, scoreAttempt, isCorrect } from "@/lib/test-types"
@@ -18,49 +18,9 @@ import { GateCalculator } from "@/components/gate-calculator"
 import { Scratchpad } from "@/components/scratchpad"
 import { cn } from "@/lib/utils"
 
+import { FormattedContent, InlineFormatted } from "@/components/formatted-content"
+
 type Status = "unseen" | "answered" | "marked" | "seen"
-
-function FormattedContent({ content }: { content: string }) {
-  if (!content) return null
-
-  // Bug #10 fix: memoize parsed parts so the heavy regex split only reruns when
-  // `content` actually changes, not on every timer tick / second re-render.
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const parts = useMemo(() => {
-    const clean = content.replace(/\\n/g, "\n")
-    return clean.split(/(```[\s\S]*?```)/g)
-  }, [content])
-
-  return (
-    <div className="space-y-3">
-      {parts.map((part, i) => {
-        if (part.startsWith("```")) {
-          const firstLineEnd = part.indexOf("\n")
-          const code = firstLineEnd !== -1 
-            ? part.slice(firstLineEnd + 1, -3).trim()
-            : part.slice(3, -3).trim()
-
-          return (
-            <pre
-              key={i}
-              className="my-3 overflow-x-auto border-3 border-border rounded-xl bg-[#1F2937] p-4 font-mono text-[12px] md:text-[14px] leading-relaxed text-white shadow-neo-sm custom-scrollbar"
-            >
-              {code}
-            </pre>
-          )
-        }
-
-        if (!part.trim()) return null
-
-        return (
-          <div key={i} className="leading-relaxed">
-            <Latex>{part}</Latex>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
 
 export function ExamRunner({ test }: { test: TestDefinition }) {
   const router = useRouter()
@@ -68,7 +28,17 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
   const { questionMap, loading } = useQuestionBank()
 
   const questions = useMemo(() => {
-    let baseQs = test.questionIds.map((id) => questionMap.get(id)).filter((q): q is NonNullable<typeof q> => Boolean(q))
+    let qids = test.questionIds
+    if ((!qids || qids.length === 0) && (test.id.startsWith("remedial-") || test.id.startsWith("custom-")) && typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(`remedial_qids_${test.id}`)
+        if (raw) {
+          qids = JSON.parse(raw)
+        }
+      } catch {}
+    }
+
+    let baseQs = (qids || []).map((id) => questionMap.get(id)).filter((q): q is NonNullable<typeof q> => Boolean(q))
     console.log("[ExamRunner] Initial match count:", baseQs.length, "Test ID:", test.id, "Test kind:", test.kind, "Test subject:", test.subject)
     
     // Fallback: If no explicit question IDs matched (e.g. due to cross-exam test ID sharing like 'subj-general-aptitude')
@@ -103,7 +73,87 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
   const [natDraft, setNatDraft] = useState("")
   const [showCalc, setShowCalc] = useState(false)
   const [showScratchpad, setShowScratchpad] = useState(false)
+  const [showQuestionPaper, setShowQuestionPaper] = useState(false)
   const [showExplanation, setShowExplanation] = useState<Record<string, boolean>>({})
+  const [savedSession, setSavedSession] = useState<{
+    index: number
+    responses: Record<string, Response>
+    marked: Record<string, boolean>
+    visited: Record<string, boolean>
+    timePerQuestion: Record<string, number>
+    elapsedSeconds: number
+    remaining: number
+    savedAt: string
+  } | null>(null)
+
+  const sessionKey = useMemo(() => `gate_active_session_${test.id}`, [test.id])
+
+  // Check for existing saved session on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(sessionKey)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed && typeof parsed === "object" && parsed.responses) {
+          setSavedSession(parsed)
+        }
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }, [sessionKey])
+
+  // Resume saved session handler
+  const resumeSession = useCallback(() => {
+    if (!savedSession) return
+    setResponses(savedSession.responses || {})
+    setMarked(savedSession.marked || {})
+    setVisited(savedSession.visited || {})
+    setTimePerQuestion(savedSession.timePerQuestion || {})
+    setElapsedSeconds(savedSession.elapsedSeconds || 0)
+    setRemaining(savedSession.remaining ?? test.durationMinutes * 60)
+    setIndex(Math.min(savedSession.index || 0, Math.max(0, questions.length - 1)))
+    startedAt.current = Date.now() - (savedSession.elapsedSeconds || 0) * 1000
+    questionEnteredAt.current = Date.now()
+    setStarted(true)
+    setSavedSession(null)
+  }, [questions.length, savedSession, test.durationMinutes])
+
+  // Discard saved session handler
+  const discardSavedSession = useCallback(() => {
+    try {
+      localStorage.removeItem(sessionKey)
+    } catch {}
+    setSavedSession(null)
+  }, [sessionKey])
+
+  // Auto-save active test state to localStorage every 2 seconds
+  useEffect(() => {
+    if (!started || submittedRef.current) return
+
+    const saveCurrentSession = () => {
+      try {
+        const sessionData = {
+          testId: test.id,
+          index,
+          responses,
+          marked,
+          visited,
+          timePerQuestion,
+          elapsedSeconds,
+          remaining,
+          savedAt: new Date().toISOString(),
+        }
+        localStorage.setItem(sessionKey, JSON.stringify(sessionData))
+      } catch {}
+    }
+
+    const intervalId = window.setInterval(saveCurrentSession, 2000)
+    // Save on state change
+    saveCurrentSession()
+
+    return () => window.clearInterval(intervalId)
+  }, [elapsedSeconds, index, marked, remaining, responses, sessionKey, started, test.id, timePerQuestion, visited])
 
   // Bug #7 fix: read an explicit `timerType` field on TestDefinition when present
   // so the decision is not fragile to ID naming conventions like \"subj-\" prefix.
@@ -177,9 +227,12 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
       wrong: result.wrong,
       skipped: result.skipped,
     }
-    // Bug #1 fix: await save() so the attempt is persisted before navigating.
-    // Without this, router.push fires before IndexedDB/localStorage write completes,
-    // causing the results page to load with empty data (404 or blank screen).
+
+    // Clear active session from localStorage
+    try {
+      localStorage.removeItem(sessionKey)
+    } catch {}
+
     save(attempt).then(() => {
       router.push(`/results/${attempt.id}`)
     })
@@ -383,7 +436,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
   /* ================= instructions screen ================= */
   if (!started) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-12 md:px-8 md:py-20 relative z-10">
+      <main className="mx-auto max-w-3xl px-4 py-12 pb-32 md:pb-20 md:px-8 md:py-20 relative z-10">
         <Link
           href="/tests"
           className="inline-flex items-center gap-1.5 font-bold text-sm text-foreground hover:text-primary transition-colors border-2 border-transparent hover:border-border rounded-xl px-2 py-1"
@@ -392,26 +445,26 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
           Back to test centre
         </Link>
 
-        <div className="neo-card p-8 mt-8 bg-card relative overflow-hidden">
+        <div className="neo-card p-5 sm:p-8 mt-6 sm:mt-8 bg-card relative overflow-hidden">
           {/* Playful accent */}
           <div className="absolute -top-4 -right-4 size-24 bg-primary/20 rounded-full blur-2xl pointer-events-none" />
           
-          <p className="font-mono text-xs tracking-widest text-primary font-bold uppercase">
+          <p className="font-mono text-[10px] sm:text-xs tracking-widest text-primary font-bold uppercase">
             {test.kind === "mock" ? "Full mock paper" : `${test.subject} drill`}
           </p>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight text-balance md:text-5xl">{test.title}</h1>
-          <p className="mt-4 text-base leading-relaxed text-secondary-text text-pretty font-medium">{test.description}</p>
+          <h1 className="mt-2 sm:mt-3 text-2xl sm:text-4xl font-bold tracking-tight text-balance md:text-5xl">{test.title}</h1>
+          <p className="mt-2 sm:mt-4 text-xs sm:text-base leading-relaxed text-secondary-text text-pretty font-medium">{test.description}</p>
 
-          <dl className="mt-8 grid gap-4 sm:grid-cols-3">
+          <dl className="mt-5 sm:mt-8 grid grid-cols-3 gap-2 sm:gap-4">
             {[
               { value: String(questions.length), label: "questions", color: "bg-[#FF9600]" },
               { value: String(totalMarks), label: "total marks", color: "bg-[#CE82FF]" },
               { value: `${test.durationMinutes}m`, label: "duration", color: "bg-[#1CB0F6]" },
             ].map((s) => (
-              <div key={s.label} className="border-3 border-border shadow-neo bg-card rounded-xl p-5 relative overflow-hidden group">
-                <div className={`absolute top-0 right-0 w-12 h-12 ${s.color} rounded-bl-full opacity-20 group-hover:opacity-40 transition-opacity`} />
-                <dd className="font-mono text-3xl font-bold leading-none tabular-nums text-foreground">{s.value}</dd>
-                <dt className="mt-2 font-mono text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{s.label}</dt>
+              <div key={s.label} className="border-[2px] sm:border-[3px] border-border shadow-neo-sm sm:shadow-neo bg-card rounded-[12px] sm:rounded-xl p-3 sm:p-5 relative overflow-hidden group flex flex-col justify-center">
+                <div className={`absolute top-0 right-0 w-8 h-8 sm:w-12 sm:h-12 ${s.color} rounded-bl-full opacity-20 group-hover:opacity-40 transition-opacity`} />
+                <dd className="font-mono text-xl sm:text-3xl font-black leading-none tabular-nums text-foreground">{s.value}</dd>
+                <dt className="mt-1 sm:mt-2 font-mono text-[9px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-widest truncate" title={s.label}>{s.label}</dt>
               </div>
             ))}
           </dl>
@@ -440,17 +493,59 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            startedAt.current = Date.now()
-            questionEnteredAt.current = Date.now()
-            setStarted(true)
-          }}
-          className="neo-btn mt-8 w-full bg-primary py-4 font-bold text-lg tracking-wide text-primary-foreground text-center"
-        >
-          Begin test — {test.durationMinutes} minutes
-        </button>
+        {savedSession && (
+          <div className="mt-8 border-3 border-[#FF9600] bg-[#FFF8EE] rounded-2xl p-6 shadow-neo space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md font-mono text-[11px] font-black uppercase tracking-wider bg-[#FF9600] text-white">
+                  ⚠️ In-Progress Attempt Found
+                </span>
+                <h3 className="text-xl font-heading font-black text-foreground mt-2">
+                  Resume Your Previous Session?
+                </h3>
+                <p className="text-sm font-medium text-secondary-text mt-1">
+                  You have an unfinished attempt saved from{" "}
+                  <strong>{new Date(savedSession.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>.
+                  You have answered{" "}
+                  <strong>{Object.keys(savedSession.responses || {}).length}</strong> of {questions.length} questions.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                onClick={resumeSession}
+                className="neo-btn bg-[#58CC02] text-white py-3 font-heading font-black text-[15px] flex items-center justify-center gap-2 uppercase tracking-wide shadow-neo-sm"
+              >
+                <Play className="size-4 fill-white" /> Resume Test (Q{savedSession.index + 1})
+              </button>
+              <button
+                type="button"
+                onClick={discardSavedSession}
+                className="px-4 py-3 rounded-xl border-2 border-border bg-white font-heading font-bold text-[14px] text-secondary-text hover:text-destructive hover:border-destructive transition-colors uppercase tracking-wide"
+              >
+                Discard &amp; Start Fresh
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!savedSession && (
+          <div className="fixed bottom-4 left-4 right-4 md:sticky md:bottom-4 z-40 md:mt-8">
+            <button
+              type="button"
+              onClick={() => {
+                startedAt.current = Date.now()
+                questionEnteredAt.current = Date.now()
+                setStarted(true)
+              }}
+              className="neo-btn w-full bg-[#1CB0F6] border-[3px] border-[#1F2937] py-4 font-black text-lg tracking-wide text-white text-center hover:brightness-110 shadow-neo"
+            >
+              Begin test — {test.durationMinutes} minutes
+            </button>
+          </div>
+        )}
       </main>
     )
   }
@@ -469,8 +564,22 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
             </p>
           </div>
 
-          {/* Tools: Calculator & Scratchpad */}
+          {/* Tools: Question Paper, Calculator & Scratchpad */}
           <div className="ml-auto flex items-center gap-1.5 md:gap-3 font-mono text-[11px]">
+            <button
+              type="button"
+              onClick={() => setShowQuestionPaper(!showQuestionPaper)}
+              className={cn(
+                "flex items-center justify-center size-11 md:size-auto md:px-3 md:py-1.5 md:gap-1.5 border-2 rounded-xl transition-colors font-bold",
+                showQuestionPaper
+                  ? "border-[#CE82FF] bg-[#CE82FF]/10 text-[#CE82FF]"
+                  : "border-border bg-background text-secondary-text hover:text-foreground"
+              )}
+              title="View full question paper"
+            >
+              <FileText className="size-4 md:size-3.5" />
+              <span className="hidden md:inline">Question Paper</span>
+            </button>
             <button
               type="button"
               onClick={() => setShowCalc(!showCalc)}
@@ -550,7 +659,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
         {/* question pane */}
         <main className="min-w-0 flex-1">
           {current && (
-            <article className="neo-card bg-card overflow-hidden">
+            <article className="neo-card bg-card overflow-clip relative flex flex-col">
               <div className="flex flex-wrap items-center gap-3 border-b-3 border-border bg-[#FAFBFF] px-6 py-4">
                 <span className="font-mono text-[12px] font-bold tracking-widest text-[#1899D6] uppercase">
                   Q{index + 1} / {questions.length}
@@ -709,7 +818,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
                                 )}
                               </span>
                               <div className={cn("flex-1 text-[14px] md:text-[15px] font-medium leading-relaxed text-pretty overflow-x-auto", selected ? "text-[#1899D6]" : "text-foreground")}>
-                                <Latex>{opt}</Latex>
+                                <InlineFormatted text={opt} />
                               </div>
                             </button>
                           </li>
@@ -749,7 +858,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
               </div>
 
               {/* nav footer */}
-              <div className="flex flex-wrap items-center gap-3 border-t-3 border-border bg-[#FAFBFF] px-6 py-4">
+              <div className="sticky bottom-0 z-40 flex flex-wrap items-center gap-3 border-t-[3px] border-border bg-[#FAFBFF] px-6 py-4 rounded-b-[13px] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                 <button
                   type="button"
                   onClick={() => goTo(index - 1)}
@@ -916,11 +1025,20 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
               ))}
             </div>
             
-            {/* Mobile Legend */}
-            <div className="flex flex-col items-end font-mono text-[10px] font-bold text-[#4B5563] px-2 pr-4 leading-tight mt-1">
-              <span>marked: {statusCounts.mrk + statusCounts.ansMrk}</span>
-              <span>done: {statusCounts.ans + statusCounts.ansMrk}</span>
-              <span>not attemp: {statusCounts.notAns + statusCounts.notVis}</span>
+            {/* Status Legend */}
+            <div className="flex flex-wrap items-center justify-start sm:justify-between gap-2 mt-2 px-2 lg:mt-4 lg:px-0 border-t-[3px] border-border/10 pt-3">
+              <div className="flex items-center gap-1.5 bg-[#58CC02]/15 border-[2px] border-[#58CC02]/40 px-2.5 py-1 rounded-lg text-[10px] font-mono font-black text-[#4CA102] uppercase tracking-wider">
+                <span className="size-2 rounded-full bg-[#58CC02]"></span>
+                Done: {statusCounts.ans + statusCounts.ansMrk}
+              </div>
+              <div className="flex items-center gap-1.5 bg-[#CE82FF]/15 border-[2px] border-[#CE82FF]/40 px-2.5 py-1 rounded-lg text-[10px] font-mono font-black text-[#A142D6] uppercase tracking-wider">
+                <span className="size-2 rounded-full bg-[#CE82FF]"></span>
+                Flagged: {statusCounts.mrk + statusCounts.ansMrk}
+              </div>
+              <div className="flex items-center gap-1.5 bg-gray-100 border-[2px] border-gray-200 px-2.5 py-1 rounded-lg text-[10px] font-mono font-black text-muted-foreground uppercase tracking-wider">
+                <span className="size-2 rounded-full bg-gray-400"></span>
+                Unseen: {statusCounts.notAns + statusCounts.notVis}
+              </div>
             </div>
           </div>
         </aside>
@@ -929,6 +1047,128 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
       {/* Floating Modals */}
       {showCalc && <GateCalculator onClose={() => setShowCalc(false)} />}
       {showScratchpad && <Scratchpad onClose={() => setShowScratchpad(false)} />}
+
+      {/* TCS iON Full Question Paper View Modal */}
+      {showQuestionPaper && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 md:p-6"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="flex flex-col w-full max-w-4xl max-h-[90vh] neo-card bg-card p-4 sm:p-6 shadow-neo border-3 border-border rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b-2 border-border">
+              <div>
+                <span className="font-mono text-[11px] font-black uppercase tracking-wider text-[#CE82FF] bg-[#CE82FF]/10 px-2.5 py-1 rounded-md border border-[#CE82FF]/30">
+                  TCS iON Full Question Paper
+                </span>
+                <h2 className="text-xl sm:text-2xl font-heading font-black text-foreground mt-1">
+                  {test.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQuestionPaper(false)}
+                className="size-10 flex items-center justify-center rounded-xl border-2 border-border bg-background hover:bg-muted text-secondary-text hover:text-foreground transition-colors font-black text-lg"
+                aria-label="Close question paper"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Questions List */}
+            <div className="flex-1 overflow-y-auto py-4 space-y-6 custom-scrollbar pr-2">
+              {questions.map((q, qIdx) => {
+                const gs = gateStatusOf(q.id)
+                return (
+                  <div
+                    key={q.id}
+                    className="p-5 rounded-xl border-2 border-border bg-[#FAFBFF] shadow-sm space-y-4 hover:border-[#1CB0F6] transition-colors"
+                  >
+                    {/* Header bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3 border-border/50">
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center justify-center size-8 rounded-lg bg-primary text-primary-foreground font-mono font-black text-sm">
+                          Q{qIdx + 1}
+                        </span>
+                        <span className="font-bold text-xs uppercase px-2 py-0.5 rounded bg-white border border-border">
+                          {q.subject}
+                        </span>
+                        <span className="font-mono text-xs font-bold text-muted-foreground">
+                          {q.type} · {q.marks} {q.marks === 1 ? "Mark" : "Marks"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "px-2 py-0.5 rounded text-[11px] font-mono font-bold uppercase",
+                            gs === "answered" && "bg-[#58CC02]/20 text-[#58CC02]",
+                            gs === "answered-marked" && "bg-[#CE82FF]/20 text-[#CE82FF]",
+                            gs === "marked" && "bg-[#CE82FF]/20 text-[#CE82FF]",
+                            gs === "not-answered" && "bg-[#FFE5E5] text-[#FF4B4B]",
+                            gs === "not-visited" && "bg-gray-100 text-muted-foreground"
+                          )}
+                        >
+                          {gs.replace("-", " ")}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowQuestionPaper(false)
+                            goTo(qIdx)
+                          }}
+                          className="px-3 py-1 bg-[#1CB0F6] text-white rounded-lg font-mono text-xs font-bold hover:bg-[#1899D6] transition-colors uppercase tracking-wide"
+                        >
+                          Jump to Q{qIdx + 1} →
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Question Content */}
+                    <div className="text-sm font-medium text-foreground leading-relaxed">
+                      <FormattedContent content={q.text} />
+                    </div>
+
+                    {/* Options (if MCQ/MSQ) */}
+                    {q.options && q.options.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-xs">
+                        {q.options.map((opt, oIdx) => (
+                          <div
+                            key={oIdx}
+                            className="p-2.5 rounded-lg border border-border/80 bg-white flex items-start gap-2"
+                          >
+                            <span className="font-black text-muted-foreground shrink-0">
+                              ({String.fromCharCode(65 + oIdx)})
+                            </span>
+                            <span className="flex-1">
+                              <FormattedContent content={opt} />
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-4 border-t-2 border-border flex items-center justify-between">
+              <span className="font-mono text-xs font-bold text-muted-foreground">
+                Showing all {questions.length} questions ({totalMarks} total marks)
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowQuestionPaper(false)}
+                className="neo-btn bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-primary-foreground"
+              >
+                Close Question Paper
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pre-Submission Confirmation Modal */}
       {confirmSubmit && (

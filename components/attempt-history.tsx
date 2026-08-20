@@ -2,19 +2,21 @@
 
 import Link from "next/link"
 import { useMemo, useState } from "react"
-import { ArrowRight, Trash2, TrendingDown, TrendingUp, Printer, Target, Flame, ShieldAlert, Sparkles, Zap, AlertTriangle } from "lucide-react"
-import { type StoredAttempt, formatClock, scoreAttempt } from "@/lib/test-types"
-import { useAttempts } from "@/lib/use-attempts"
-import { useQuestionBank, useCollection, useTests } from "@/lib/storage/hooks"
-import { COLLECTIONS } from "@/lib/storage/store"
-import type { StudySession, MistakeEntry } from "@/lib/domain/types"
 import {
-  estimateGateScoreInterval,
-  getMarksPerHourYield,
-  getTimeBleedDiagnosis,
-  getSillyMistakeIndex,
-  getHighestYieldHourSuggestion,
-} from "@/lib/analytics/prescriptive"
+  ArrowRight,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+  Printer,
+  Sparkles,
+  BarChart3,
+  Clock,
+  Search,
+} from "lucide-react"
+import { type StoredAttempt, formatClock, scoreAttempt } from "@/lib/test-types"
+import { useAttempts, useQuestionBank, useCollection, useTests } from "@/lib/storage/hooks"
+import { COLLECTIONS } from "@/lib/storage/store"
+import { estimateGateScoreInterval, getTimeBleedDiagnosis, getSillyMistakeIndex, getHighestYieldHourSuggestion, getMarksPerHourYield } from "@/lib/analytics/prescriptive"
 import { cn } from "@/lib/utils"
 
 /** Percentage score for an attempt, floored at 0 so negatives don't break scales. */
@@ -22,94 +24,7 @@ function pct(a: StoredAttempt): number {
   return a.totalMarks > 0 ? (Math.max(0, a.scored) / a.totalMarks) * 100 : 0
 }
 
-/** Dependency-free SVG line chart of score progression (oldest → newest). */
-function TrendChart({ attempts }: { attempts: StoredAttempt[] }) {
-  const series = [...attempts].reverse() // stored newest-first
-  const W = 720
-  const H = 200
-  const PAD = { top: 16, right: 16, bottom: 28, left: 34 }
-  const innerW = W - PAD.left - PAD.right
-  const innerH = H - PAD.top - PAD.bottom
 
-  if (series.length < 2) {
-    return (
-      <div className="border border-dashed border-border bg-card/50 p-8 text-center">
-        <p className="font-mono text-[11px] text-muted-foreground">
-          Take at least two tests to see a trend line. {series.length === 1 ? "One attempt recorded so far." : ""}
-        </p>
-      </div>
-    )
-  }
-
-  const x = (i: number) => PAD.left + (i / (series.length - 1)) * innerW
-  const y = (v: number) => PAD.top + innerH - (v / 100) * innerH
-
-  const line = series.map((a, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(pct(a)).toFixed(1)}`).join(" ")
-  const area = `${line} L${x(series.length - 1).toFixed(1)},${(PAD.top + innerH).toFixed(1)} L${x(0).toFixed(1)},${(PAD.top + innerH).toFixed(1)} Z`
-
-  return (
-    <div className="border border-border bg-card p-4">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="h-auto w-full"
-        role="img"
-        aria-label={`Score progression across ${series.length} attempts, from ${pct(series[0]).toFixed(0)}% to ${pct(series[series.length - 1]).toFixed(0)}%`}
-      >
-        {/* gridlines */}
-        {[0, 25, 50, 75, 100].map((v) => (
-          <g key={v}>
-            <line
-              x1={PAD.left}
-              x2={W - PAD.right}
-              y1={y(v)}
-              y2={y(v)}
-              stroke="currentColor"
-              className="text-border"
-              strokeWidth="1"
-            />
-            <text
-              x={PAD.left - 8}
-              y={y(v) + 3.5}
-              textAnchor="end"
-              className="fill-muted-foreground font-mono"
-              fontSize="9"
-            >
-              {v}
-            </text>
-          </g>
-        ))}
-
-        <path d={area} className="fill-primary/12" />
-        <path d={line} fill="none" className="stroke-primary" strokeWidth="2" strokeLinejoin="round" />
-
-        {series.map((a, i) => (
-          <g key={a.id}>
-            <circle cx={x(i)} cy={y(pct(a))} r="3.5" className="fill-primary" />
-            <title>
-              {a.testTitle} — {pct(a).toFixed(1)}% ({a.scored.toFixed(1)}/{a.totalMarks})
-            </title>
-          </g>
-        ))}
-
-        {/* x labels: first, middle, last only, to avoid crowding */}
-        {[0, Math.floor((series.length - 1) / 2), series.length - 1]
-          .filter((v, i, arr) => arr.indexOf(v) === i)
-          .map((i) => (
-            <text
-              key={i}
-              x={x(i)}
-              y={H - 8}
-              textAnchor={i === 0 ? "start" : i === series.length - 1 ? "end" : "middle"}
-              className="fill-muted-foreground font-mono"
-              fontSize="9"
-            >
-              {new Date(series[i].submittedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-            </text>
-          ))}
-      </svg>
-    </div>
-  )
-}
 
 export function AttemptHistory() {
   const { attempts, ready, remove, clear } = useAttempts()
@@ -118,20 +33,25 @@ export function AttemptHistory() {
   const { data: sessions } = useCollection(COLLECTIONS.sessions)
   const { data: mistakes } = useCollection(COLLECTIONS.mistakes)
 
-  const [testFilter, setTestFilter] = useState<string>("all")
-  const [includeUnverified, setIncludeUnverified] = useState(false)
+  const [searchHistory, setSearchHistory] = useState("")
   const [confirmClear, setConfirmClear] = useState(false)
 
   const scoreEstimate = useMemo(() => estimateGateScoreInterval(attempts), [attempts])
-  const yieldStats = useMemo(() => getMarksPerHourYield(attempts, sessions as StudySession[]), [attempts, sessions])
+  const yieldStats = useMemo(() => getMarksPerHourYield(attempts, sessions || []), [attempts, sessions])
   const timeBleeds = useMemo(() => getTimeBleedDiagnosis(attempts, questionMap), [attempts, questionMap])
-  const sillyStats = useMemo(() => getSillyMistakeIndex(mistakes as MistakeEntry[], questionMap), [mistakes, questionMap])
-  const highestYieldHour = useMemo(
-    () => getHighestYieldHourSuggestion(attempts, yieldStats, timeBleeds, sillyStats),
-    [attempts, yieldStats, timeBleeds, sillyStats]
-  )
+  const sillyStats = useMemo(() => getSillyMistakeIndex(mistakes || [], questionMap), [mistakes, questionMap])
+  const nextAction = useMemo(() => getHighestYieldHourSuggestion(attempts, yieldStats, timeBleeds, sillyStats), [attempts, yieldStats, timeBleeds, sillyStats])
 
-  const filtered = attempts.filter((a) => testFilter === "all" || a.testId === testFilter)
+  const searchedAttempts = useMemo(() => {
+    if (!searchHistory.trim()) return attempts
+    const q = searchHistory.toLowerCase().trim()
+    return attempts.filter(
+      (a) =>
+        a.testTitle.toLowerCase().includes(q) ||
+        (a.subject && a.subject.toLowerCase().includes(q)) ||
+        a.kind.toLowerCase().includes(q)
+    )
+  }, [attempts, searchHistory])
 
   /** Aggregate per-subject accuracy across every attempt. */
   const subjectStats = useMemo(() => {
@@ -140,7 +60,6 @@ export function AttemptHistory() {
       const qs = (a.questionIds ?? [])
         .map((id) => questionMap.get(id))
         .filter((q): q is NonNullable<typeof q> => Boolean(q))
-        .filter((q) => includeUnverified || q.verified !== false)
       if (qs.length === 0) continue
       const r = scoreAttempt(qs, a.responses, a.timePerQuestion)
       for (const s of r.bySubject) {
@@ -161,430 +80,496 @@ export function AttemptHistory() {
         accuracy: v.correct + v.wrong > 0 ? (v.correct / (v.correct + v.wrong)) * 100 : 0,
         yield: v.total > 0 ? (Math.max(0, v.scored) / v.total) * 100 : 0,
       }))
-      .sort((a, b) => a.yield - b.yield)
-  }, [attempts])
+      .sort((a, b) => b.yield - a.yield)
+  }, [attempts, questionMap])
 
-  const best = filtered.length > 0 ? Math.max(...filtered.map(pct)) : 0
-  const avg = filtered.length > 0 ? filtered.reduce((s, a) => s + pct(a), 0) / filtered.length : 0
-  const latest = filtered[0]
-  const previous = filtered[1]
-  const delta = latest && previous ? pct(latest) - pct(previous) : null
 
-  const testsWithAttempts = TESTS.filter((t) => attempts.some((a) => a.testId === t.id))
 
   if (!ready) {
     return (
-      <main className="mx-auto max-w-[1600px] px-4 py-20 md:px-8">
-        <p className="font-mono text-[11px] text-muted-foreground">Loading attempt history…</p>
+      <main className="mx-auto max-w-6xl px-4 py-20 md:px-8">
+        <p className="font-mono text-xs font-bold text-secondary-text animate-pulse">Loading performance analytics…</p>
       </main>
     )
   }
 
   if (attempts.length === 0) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-20 md:px-8">
-        <p className="font-mono text-[11px] tracking-[0.24em] text-primary uppercase">Progress</p>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-balance md:text-4xl">
-          No attempts recorded yet.
-        </h1>
-        <p className="mt-4 text-base leading-relaxed text-muted-foreground text-pretty">
-          Once you submit a test, your score, per-subject accuracy and pacing land here and build into a trend line
-          across attempts. Results are saved in this browser.
-        </p>
+      <main className="min-h-screen bg-transparent pt-3 sm:pt-6 md:pt-10 pb-28 md:pb-40 px-3 sm:px-4 md:px-6 max-w-3xl mx-auto space-y-4">
         <Link
-          href="/tests"
-          className="mt-8 inline-flex items-center gap-2 border border-primary bg-primary px-5 py-2.5 font-mono text-[11px] tracking-wide text-primary-foreground transition-opacity hover:opacity-90"
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-secondary-text hover:text-foreground transition-colors mb-1"
         >
-          Go to test centre
-          <ArrowRight className="size-3.5" aria-hidden="true" />
+          <ArrowRight className="size-3.5 rotate-180" /> Back to Dashboard
         </Link>
+
+        <div className="neo-card bg-white border-2 sm:border-3 border-[#1F2937] p-5 sm:p-10 text-center rounded-2xl sm:rounded-3xl shadow-neo-xs sm:shadow-neo space-y-3">
+          <BarChart3 className="size-10 sm:size-14 text-[#1CB0F6] mx-auto" />
+          <h1 className="text-lg sm:text-2xl font-heading font-black text-foreground uppercase tracking-tight">
+            No Test Attempts Recorded Yet
+          </h1>
+          <p className="text-xs sm:text-sm font-bold text-secondary-text max-w-md mx-auto leading-relaxed">
+            Take a mock test or practice drill in the Test Centre. Your score trends, subject accuracy, and real-time GATE Rank predictions will automatically generate here.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/tests"
+              className="neo-btn bg-[#58CC02] text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-heading font-black text-xs sm:text-sm uppercase tracking-wider inline-flex items-center gap-2 shadow-neo-xs sm:shadow-neo-sm hover:-translate-y-0.5"
+            >
+              Go to Test Centre
+              <ArrowRight className="size-4" />
+            </Link>
+          </div>
+        </div>
       </main>
     )
   }
 
   return (
-    <main className="min-h-dvh relative z-10 bg-background pb-12">
-      <section className="relative overflow-hidden border-b-3 border-border">
-        <div className="grid-lines absolute inset-0" aria-hidden="true" />
-        <div className="relative mx-auto max-w-[1600px] px-4 py-10 md:px-8 md:py-14">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="font-mono text-xs tracking-widest text-[#CE82FF] font-bold uppercase">Prescriptive Analytics &amp; Progress</p>
-              <h1 className="mt-2 max-w-3xl text-4xl leading-[1.1] font-bold tracking-tight text-balance md:text-5xl">
-                {delta === null
-                  ? "Your attempt history & predictive yield."
-                  : delta >= 0
-                    ? `Up ${delta.toFixed(1)} points on your last attempt.`
-                    : `Down ${Math.abs(delta).toFixed(1)} points on your last attempt.`}
+    <main className="min-h-screen bg-transparent pt-3 sm:pt-6 md:pt-10 pb-28 md:pb-40 px-3 sm:px-4 md:px-6 max-w-6xl mx-auto space-y-4 sm:space-y-6 md:space-y-8 animate-in fade-in duration-300">
+      {/* Top Header & Breadcrumb */}
+      <header className="space-y-3 sm:space-y-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-secondary-text hover:text-foreground transition-colors mb-1"
+        >
+          <ArrowRight className="size-3.5 rotate-180" /> Back to Dashboard
+        </Link>
+
+        <div className="bg-[#F0FFF4] border-[3px] border-[#1F2937] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-neo relative overflow-hidden">
+          {/* Decorative element */}
+          <div className="absolute -top-10 -right-10 size-40 bg-[#58CC02] opacity-20 rounded-full blur-3xl"></div>
+          
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+            <div className="min-w-0 flex-1 space-y-2 sm:space-y-3">
+              <div className="inline-flex items-center gap-2 bg-white border-2 border-[#1F2937] px-3 py-1 rounded-xl shadow-neo-xs">
+                <BarChart3 className="size-4 text-[#58CC02]" />
+                <p className="font-mono text-[10px] sm:text-xs font-black tracking-widest text-foreground uppercase">
+                  Prescriptive Analytics
+                </p>
+              </div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-heading font-black text-foreground uppercase tracking-tighter">
+                Performance Insights
               </h1>
+              <p className="text-xs sm:text-sm font-bold text-foreground/80 max-w-xl">
+                Predictive GATE score model, subject yield, time-bleed analytics &amp; mistake diagnosis.
+              </p>
             </div>
-
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="neo-btn bg-white text-foreground hover:text-primary transition-colors print:hidden flex items-center gap-2 px-4 py-2 min-h-11"
-            >
-              <Printer className="size-4" />
-              Print Progress Report
-            </button>
-          </div>
-
-          {/* SINGLE HIGHEST-YIELD HOUR HIGHLIGHT */}
-          <div className="mt-10 border-3 border-[#CE82FF] bg-[#F6E8FF] rounded-2xl p-8 relative overflow-hidden shadow-neo">
-            <div className="absolute -top-4 -right-4 w-32 h-32 bg-white rounded-full opacity-50 pointer-events-none mix-blend-overlay" />
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="space-y-1.5 max-w-3xl">
-                <div className="flex items-center gap-2 font-mono text-[11px] tracking-wider text-primary uppercase font-bold">
-                  <Sparkles className="size-4" />
-                  Single Highest-Yield Hour You Can Spend Today
-                </div>
-                <h3 className="text-xl font-bold text-foreground">{highestYieldHour.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{highestYieldHour.reason}</p>
-              </div>
-
-              <div className="flex flex-col items-start sm:items-end gap-3 shrink-0 relative z-10 mt-4 sm:mt-0">
-                <span className="font-mono text-xl font-black text-[#CE82FF] bg-white border-3 border-[#CE82FF] px-4 py-2 rounded-xl shadow-neo-sm">
-                  {highestYieldHour.impactMarks}
-                </span>
-                <Link
-                  href={highestYieldHour.actionLink}
-                  className="neo-btn bg-[#CE82FF] text-white flex items-center gap-2 px-5 py-2.5"
-                >
-                  Start Action <ArrowRight className="size-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* EXPECTED GATE SCORE INTERVAL & STATS GRID */}
-          <div className="mt-8 grid gap-6 md:grid-cols-12">
-            {/* Score Estimator */}
-            <div className="md:col-span-6 neo-card bg-card p-8 flex flex-col justify-between">
-              <div>
-                <p className="font-mono text-xs font-bold tracking-widest text-[#FF9600] uppercase">
-                  Expected GATE Score Interval
-                </p>
-                <div className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                  <span className="font-mono text-4xl font-black text-foreground tracking-tight md:text-5xl">
-                    {scoreEstimate.low} &ndash;{" "}
-                    <span className="text-[#FF9600]">{scoreEstimate.mid}</span> &ndash; {scoreEstimate.high}
-                  </span>
-                  <span className="font-mono text-sm font-bold text-muted-foreground">/ 100 marks</span>
-                </div>
-                <p className="mt-3 text-[14px] font-medium text-muted-foreground leading-relaxed">
-                  {scoreEstimate.basisReason}
-                </p>
-              </div>
-
-              <div className="mt-6 border-t-3 border-border pt-4 flex items-center justify-between font-mono text-[13px] font-bold">
-                <span className="text-muted-foreground">Estimate Confidence</span>
-                <span className="text-[#FF9600] uppercase bg-[#FFF2DE] border-2 border-[#FF9600] px-3 py-1 rounded-md">{scoreEstimate.confidence} Confidence</span>
-              </div>
-            </div>
-
-            {/* Quick Stats Grid */}
-            <div className="md:col-span-6 grid grid-cols-2 gap-4">
-              {[
-                { v: String(filtered.length), l: "attempts", sub: `${attempts.length} total recorded`, color: "bg-[#1CB0F6]", tone: "text-[#1899D6]" },
-                { v: `${best.toFixed(1)}%`, l: "best score", sub: "highest percentage", color: "bg-[#58CC02]", tone: "text-[#58CC02]" },
-                { v: `${avg.toFixed(1)}%`, l: "average score", sub: "across filtered attempts", color: "bg-[#FF9600]", tone: "text-[#FF9600]" },
-                {
-                  v: latest ? `${pct(latest).toFixed(1)}%` : "—",
-                  l: "latest score",
-                  sub: latest ? latest.testTitle : "",
-                  color: "bg-[#CE82FF]", tone: "text-[#CE82FF]"
-                },
-              ].map((s) => (
-                <div key={s.l} className="neo-card bg-card p-5 relative overflow-hidden group">
-                  <div className={`absolute top-0 right-0 w-12 h-12 ${s.color} rounded-bl-[100px] opacity-20 pointer-events-none`} />
-                  <dd className={cn("font-mono text-3xl font-black leading-none tabular-nums", s.tone)}>{s.v}</dd>
-                  <dt className="mt-2 font-bold text-[13px] uppercase tracking-wider text-foreground">{s.l}</dt>
-                  <p className="mt-1 truncate font-mono text-[11px] font-medium text-muted-foreground" title={s.sub}>{s.sub}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* MARKS PER HOUR YIELD & TIME BLEED DIAGNOSIS */}
-          <div className="mt-10 grid gap-8 lg:grid-cols-12">
-            {/* Marks per Hour Yield Table */}
-            <div className="lg:col-span-7 neo-card bg-card p-0 overflow-hidden space-y-0">
-              <div className="p-5 border-b-3 border-border bg-[#FAFBFF]">
-                <h3 className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">
-                  Marks-per-Hour Yield Ranking
-                </h3>
-              </div>
-              <div className="overflow-x-auto p-2">
-                <table className="w-full min-w-[500px] text-left font-mono text-[13px] font-medium">
-                  <thead>
-                    <tr className="text-muted-foreground uppercase tracking-widest text-[10px]">
-                      <th className="p-3">Subject</th>
-                      <th className="p-3 text-right">Hours</th>
-                      <th className="p-3 text-right">Scored</th>
-                      <th className="p-3 text-right">Yield (M/Hr)</th>
-                      <th className="p-3 text-right">Priority</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {yieldStats.slice(0, 6).map((y, index) => (
-                      <tr key={`${y.subject}-${index}`} className="hover:bg-muted/50 rounded-xl transition-colors">
-                        <td className="p-3 font-bold text-foreground">{y.subject}</td>
-                        <td className="p-3 text-right text-muted-foreground">{y.hoursSpent}h</td>
-                        <td className="p-3 text-right text-foreground">{y.marksScored}m</td>
-                        <td className="p-3 text-right font-black text-[#58CC02]">{y.actualYield}</td>
-                        <td className="p-3 text-right font-bold text-muted-foreground">{y.modelPriority}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Time Bleed & Silly Mistakes */}
-            <div className="lg:col-span-5 space-y-6">
-              {/* Time Bleed Diagnosis */}
-              <div className="neo-card bg-card p-6 space-y-4">
-                <h3 className="font-mono text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                  <span className="flex items-center justify-center bg-[#FFF2DE] border-2 border-[#FF9600] rounded-full p-1.5">
-                    <ShieldAlert className="size-4 text-[#FF9600]" />
-                  </span>
-                  Time-Bleed Diagnosis
-                </h3>
-
-                {timeBleeds.length > 0 ? (
-                  <div className="space-y-3">
-                    {timeBleeds.map((tb, index) => (
-                      <div key={`${tb.subject}-${index}`} className="border-2 border-[#FF9600] rounded-xl bg-[#FFF2DE] p-4 text-[13px] space-y-1 shadow-neo-sm">
-                        <p className="font-bold text-[#B36900]">{tb.subject}</p>
-                        <p className="text-[#B36900]/80 font-medium">{tb.recommendation}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[13px] font-medium text-muted-foreground bg-muted p-4 rounded-xl border-2 border-border/50">
-                    No severe time bleeds detected. Pacing is optimal across subjects.
-                  </p>
-                )}
-              </div>
-
-              {/* Silly Mistake Index */}
-              <div className="neo-card bg-card p-6 space-y-4">
-                <h3 className="font-mono text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                  <span className="flex items-center justify-center bg-[#FFE5E5] border-2 border-[#FF4B4B] rounded-full p-1.5">
-                    <AlertTriangle className="size-4 text-[#FF4B4B]" />
-                  </span>
-                  Avoidable Error Bleed
-                </h3>
-
-                {sillyStats.length > 0 ? (
-                  <div className="space-y-3 font-mono text-[13px] font-bold">
-                    {sillyStats.map((s, index) => (
-                      <div key={`${s.subject}-${index}`} className="flex items-center justify-between border-2 border-border bg-muted/30 rounded-xl p-3 shadow-neo-sm">
-                        <span className="text-foreground">{s.subject}</span>
-                        <span className="text-[#FF4B4B]">-{s.marksLost} marks ({s.sillyCount} errors)</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[13px] font-medium text-muted-foreground bg-muted p-4 rounded-xl border-2 border-border/50">
-                    Zero calculation/silly errors logged in Mistake Notebook.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* trend */}
-      <section className="border-b-3 border-border bg-[#FAFBFF]">
-        <div className="mx-auto max-w-[1600px] px-4 py-10 md:px-8">
-          <div className="flex flex-wrap items-center gap-4">
-            <p className="font-mono text-xs font-bold tracking-widest text-[#1CB0F6] uppercase">01 / score progression</p>
-            <div className="ml-auto flex items-center gap-4">
-              <label className="flex cursor-pointer items-center gap-2 font-mono text-[11px] font-bold tracking-wide text-muted-foreground hover:text-foreground">
-                <input
-                  type="checkbox"
-                  checked={includeUnverified}
-                  onChange={(e) => setIncludeUnverified(e.target.checked)}
-                  className="rounded border-border accent-[#1CB0F6] focus:ring-0"
-                />
-                <span>Include unverified</span>
-              </label>
-              <label htmlFor="test-filter" className="sr-only">
-                Filter by test
-              </label>
-              <select
-                id="test-filter"
-                value={testFilter}
-                onChange={(e) => setTestFilter(e.target.value)}
-                className="border-2 border-border rounded-xl bg-card px-3 py-1.5 font-mono text-[11px] font-bold tracking-wide outline-none transition-colors shadow-neo-sm focus:border-[#1CB0F6]"
+            
+            <div className="hidden sm:flex items-center shrink-0 mt-4 md:mt-0">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="neo-btn bg-white text-foreground px-5 py-3 text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-2 shadow-neo hover:-translate-y-1 transition-all rounded-xl border-2 border-[#1F2937]"
               >
-                <option value="all">All tests</option>
-                {testsWithAttempts.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title}
-                  </option>
-                ))}
-              </select>
+                <Printer className="size-4" />
+                Print Report
+              </button>
             </div>
           </div>
-          <div className="mt-8 neo-card bg-card p-6">
-            <TrendChart attempts={filtered} />
+        </div>
+      </header>
+
+      {/* HERO PREDICTIVE AI CARD */}
+      <div className="neo-card bg-[#FAFBFF] border-2 sm:border-3 border-[#1F2937] p-2.5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-neo-xs sm:shadow-neo space-y-2.5 sm:space-y-6 overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 border-b-2 border-[#1F2937]/15 pb-2.5 sm:pb-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-xs font-black text-[#1899D6] uppercase tracking-wider">
+            <Sparkles className="size-3.5 sm:size-4 text-[#1CB0F6] shrink-0" />
+            <span>GATE 2027 Intelligence Score &amp; Rank Predictor</span>
           </div>
-        </div>
-      </section>
-
-      {/* subject accuracy across all attempts */}
-      <section className="border-b-3 border-border">
-        <div className="mx-auto max-w-[1600px] px-4 py-10 md:px-8">
-          <p className="font-mono text-xs font-bold tracking-widest text-[#58CC02] uppercase">02 / subject strength</p>
-          <p className="mt-3 max-w-2xl text-[14px] font-medium leading-relaxed text-muted-foreground text-pretty">
-            Marks captured as a share of marks available, aggregated across every attempt. Weakest first — these are the
-            subjects to re-prioritise in the matrix.
-          </p>
-          <ul className="mt-8 space-y-4">
-            {subjectStats.map((s, index) => (
-              <li key={`${s.subject}-${index}`} className="flex items-center gap-4 border-2 border-border/50 bg-card rounded-xl p-3 shadow-neo-sm">
-                <span className="w-40 shrink-0 truncate text-[14px] font-bold sm:w-56" title={s.subject}>
-                  {s.subject}
-                </span>
-                <span className="relative block h-5 flex-1 bg-foreground/5 rounded-full overflow-hidden border-2 border-border/20" aria-hidden="true">
-                  <span
-                    className={cn("absolute inset-y-0 left-0", s.yield >= 60 ? "bg-[#58CC02]" : "bg-[#FF4B4B]")}
-                    style={{ width: `${Math.max(1, s.yield)}%` }}
-                  />
-                </span>
-                <span className="w-16 shrink-0 text-right font-mono text-[14px] font-black tabular-nums text-foreground">
-                  {s.yield.toFixed(0)}%
-                </span>
-                <span className="hidden w-40 shrink-0 text-right font-mono text-[12px] font-bold tabular-nums text-muted-foreground sm:block">
-                  <span className="text-[#58CC02]">{s.correct}R</span> / <span className="text-[#FF4B4B]">{s.wrong}W</span> / {s.skipped}S
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* attempt log */}
-      <section className="mx-auto max-w-[1600px] px-4 py-10 md:px-8 bg-[#FAFBFF]">
-        <div className="flex flex-wrap items-center gap-4">
-          <p className="font-mono text-xs font-bold tracking-widest text-[#FF9600] uppercase">03 / attempt log</p>
-          <button
-            type="button"
-            onClick={() => setConfirmClear(true)}
-            className="ml-auto inline-flex items-center gap-2 border-2 border-border rounded-xl bg-card px-4 py-2 min-h-11 font-mono text-xs font-bold tracking-wide text-muted-foreground shadow-neo-sm transition-all hover:-translate-y-0.5 hover:border-[#FF4B4B] hover:text-[#FF4B4B]"
-          >
-            <Trash2 className="size-3.5" aria-hidden="true" />
-            Clear all history
-          </button>
+          <span className="bg-[#FFF8EE] border-2 border-[#1F2937] text-[#FF9600] px-2 py-0.5 sm:px-3 sm:py-1 rounded-xl text-[9px] sm:text-xs font-black uppercase shadow-neo-xs">
+            {scoreEstimate.confidence} Confidence &middot; {scoreEstimate.percentile}
+          </span>
         </div>
 
-        {confirmClear && (
-          <div className="mt-6 border-3 border-[#FF4B4B] rounded-2xl bg-[#FFE5E5] p-6 shadow-neo">
-            <p className="text-[15px] font-bold leading-relaxed text-[#FF4B4B]">
-              Delete all {attempts.length} saved attempts? This cannot be undone.
+        {/* 4 Core Intelligence Metrics (2x2 on mobile, 4-col on desktop) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {/* Predicted Raw Marks */}
+          <div className="bg-white border-[3px] border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
+            <p className="text-[10px] sm:text-[11px] font-heading font-black uppercase text-secondary-text tracking-wider">Predicted Raw</p>
+            <div className="flex items-baseline gap-1 min-w-0">
+              <span className="font-heading text-3xl md:text-4xl font-black text-foreground tabular-nums tracking-tighter">
+                {scoreEstimate.rawMid}
+              </span>
+              <span className="font-mono text-[9px] sm:text-xs font-bold text-secondary-text shrink-0">/ 100</span>
+            </div>
+            <p className="font-mono text-[10px] sm:text-xs font-bold text-[#1CB0F6]">
+              {scoreEstimate.rawLow}–{scoreEstimate.rawHigh}
             </p>
-            <div className="mt-4 flex gap-3">
+          </div>
+
+          {/* Normalized Score */}
+          <div className="bg-white border-[3px] border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
+            <p className="text-[10px] sm:text-[11px] font-heading font-black uppercase text-secondary-text tracking-wider">GATE Score</p>
+            <div className="flex items-baseline gap-1 min-w-0">
+              <span className="font-heading text-3xl md:text-4xl font-black text-[#58CC02] tabular-nums tracking-tighter">
+                {scoreEstimate.gateScoreMid}
+              </span>
+              <span className="font-mono text-[9px] sm:text-[11px] font-bold text-secondary-text shrink-0">/ 1k</span>
+            </div>
+            <p className="font-mono text-[9px] sm:text-[11px] font-bold text-[#58CC02]">
+              {scoreEstimate.gateScoreLow}–{scoreEstimate.gateScoreHigh}
+            </p>
+          </div>
+
+          {/* Predicted AIR */}
+          <div className="bg-white border-[3px] border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
+            <p className="text-[10px] sm:text-[11px] font-heading font-black uppercase text-secondary-text tracking-wider">AIR Rank</p>
+            <div className="min-w-0">
+              <span className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-[#CE82FF] truncate block leading-tight tracking-tighter">
+                {scoreEstimate.airLabel}
+              </span>
+            </div>
+            <p className="font-mono text-[9px] sm:text-[11px] font-bold text-[#FF9600]">
+              Top {scoreEstimate.percentile}
+            </p>
+          </div>
+
+          {/* Admission Tier */}
+          <div className="bg-white border-[3px] border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
+            <p className="text-[10px] sm:text-[11px] font-heading font-black uppercase text-secondary-text tracking-wider">Admissions</p>
+            <div className="min-w-0 flex-1">
+              <span className="font-heading text-xs sm:text-sm md:text-base font-black text-[#1CB0F6] leading-snug line-clamp-3">
+                {scoreEstimate.admissionsTier}
+              </span>
+            </div>
+            <p className="font-mono text-[9px] sm:text-[10px] font-bold text-secondary-text">Cutoffs</p>
+          </div>
+        </div>
+
+        <p className="font-mono text-[9px] sm:text-xs font-bold text-secondary-text">
+          💡 <span className="text-foreground font-black">Methodology:</span> {scoreEstimate.basisReason}
+        </p>
+      </div>
+
+      <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
+        {/* HIGHEST-YIELD ACTION BANNER */}
+        <div className="neo-card bg-white border-[3px] border-[#1F2937] p-4 sm:p-6 rounded-2xl shadow-neo flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <p className="font-mono text-[10px] sm:text-xs font-black text-[#FF4B4B] uppercase tracking-wider flex items-center gap-1.5">
+              <TrendingUp className="size-3.5" /> Highest-Yield Action
+            </p>
+            <h2 className="font-heading font-black text-lg sm:text-xl text-foreground">
+              {nextAction.title}
+            </h2>
+            <p className="text-xs sm:text-sm font-bold text-secondary-text max-w-2xl">
+              {nextAction.reason}
+            </p>
+          </div>
+          <div className="flex flex-col items-end shrink-0 w-full sm:w-auto gap-2">
+            <span className="font-mono text-[10px] sm:text-xs font-black text-[#58CC02] bg-[#F0FFF4] border-2 border-[#58CC02] px-2 py-0.5 rounded-lg">
+              {nextAction.impactMarks}
+            </span>
+            <Link href={nextAction.actionLink} className="neo-btn bg-[#1F2937] text-white px-5 py-2 rounded-xl font-black uppercase text-xs sm:text-sm w-full text-center hover:bg-[#1CB0F6] transition-colors shadow-neo-sm">
+              Start Now
+            </Link>
+          </div>
+        </div>
+
+          {/* Subject-Wise Predicted Marks Grid */}
+          <div className="neo-card bg-white border-2 border-[#1F2937] p-3 sm:p-5 md:p-8 rounded-2xl sm:rounded-3xl shadow-neo-xs sm:shadow-neo space-y-3 sm:space-y-6">
+            <div>
+              <h2 className="text-sm sm:text-xl font-heading font-black text-foreground uppercase tracking-tight">
+                Subject-Wise Predicted Marks Breakdown
+              </h2>
+              <p className="text-[10px] sm:text-xs font-bold text-secondary-text mt-0.5">
+                Estimated marks per subject based on current accuracy and GATE weightages.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[500px] sm:max-h-none overflow-y-auto p-1 -m-1">
+              {scoreEstimate.subjectScores.map((s, i) => {
+                return (
+                  <div
+                    key={s.subject}
+                    className="bg-white border-[2.5px] border-[#1F2937] p-3.5 sm:p-4 rounded-2xl shadow-neo-sm flex flex-col justify-between space-y-2.5 sm:space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                    <span className="font-heading font-black text-xs sm:text-sm text-foreground truncate">{s.subject}</span>
+                    <span
+                      className={cn(
+                        "px-2 py-0.5 rounded-md font-mono text-[9px] sm:text-[10px] font-black uppercase shrink-0 border",
+                        s.status === "Strong"
+                          ? "bg-[#F0FFF4] text-[#58CC02] border-[#58CC02]"
+                          : s.status === "Moderate"
+                          ? "bg-[#FFF8EE] text-[#FF9600] border-[#FF9600]"
+                          : s.status === "Needs Focus"
+                          ? "bg-[#FFE5E5] text-[#FF4B4B] border-[#FF4B4B]"
+                          : "bg-gray-100 text-gray-400 border-gray-300"
+                      )}
+                    >
+                      {s.status}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between font-mono text-[11px] sm:text-xs">
+                      <span className="text-secondary-text font-bold">Predicted:</span>
+                      <span className="font-black text-foreground">
+                        {s.predictedMarks} / {s.maxGateMarks} Marks
+                      </span>
+                    </div>
+
+                    <div className="h-3 w-full bg-white border-[2px] border-[#1F2937] rounded-full overflow-hidden p-[1px]">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all border-r-[1.5px] border-[#1F2937]/20",
+                          s.status === "Untested" ? "bg-transparent" : s.accuracy >= 70 ? "bg-[#58CC02]" : s.accuracy >= 45 ? "bg-[#FF9600]" : "bg-[#FF4B4B]"
+                        )}
+                        style={{ width: `${s.accuracy}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* TIME BLEED & SILLY MISTAKE DIAGNOSIS */}
+          {(timeBleeds.length > 0 || sillyStats.length > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              {/* Time Bleeds */}
+              {timeBleeds.length > 0 && (
+                <div className="neo-card bg-white border-[2.5px] border-[#1F2937] p-4 sm:p-6 rounded-2xl shadow-neo-sm space-y-4">
+                  <div className="flex items-center justify-between border-b-2 border-[#1F2937]/10 pb-3">
+                    <div>
+                      <h3 className="font-heading font-black text-sm sm:text-base uppercase flex items-center gap-1.5 text-foreground">
+                        <Clock className="size-4 text-[#FF9600]" /> Time Bleeds
+                      </h3>
+                      <p className="font-mono text-[9px] sm:text-[10px] text-secondary-text font-bold mt-0.5">High time, low accuracy topics</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {timeBleeds.slice(0, 3).map(bleed => (
+                      <div key={bleed.topic} className="p-3 bg-[#FAFBFF] border-2 border-[#1F2937]/10 rounded-xl space-y-1.5">
+                        <div className="flex justify-between items-start">
+                          <span className="font-heading font-black text-xs sm:text-sm text-foreground">{bleed.topic}</span>
+                          <span className="font-mono text-[10px] font-bold text-[#FF4B4B] bg-[#FFE5E5] px-1.5 py-0.5 rounded border border-[#FF4B4B]/20">{bleed.accuracyPct}% Acc</span>
+                        </div>
+                        <p className="font-mono text-[10px] sm:text-xs font-bold text-secondary-text">
+                          {bleed.recommendation}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Silly Mistakes */}
+              {sillyStats.length > 0 && (
+                <div className="neo-card bg-white border-[2.5px] border-[#1F2937] p-4 sm:p-6 rounded-2xl shadow-neo-sm space-y-4">
+                  <div className="flex items-center justify-between border-b-2 border-[#1F2937]/10 pb-3">
+                    <div>
+                      <h3 className="font-heading font-black text-sm sm:text-base uppercase flex items-center gap-1.5 text-foreground">
+                        <TrendingDown className="size-4 text-[#FF4B4B]" /> Careless Errors
+                      </h3>
+                      <p className="font-mono text-[9px] sm:text-[10px] text-secondary-text font-bold mt-0.5">Marks lost to silly mistakes</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {sillyStats.slice(0, 3).map(stat => (
+                      <div key={stat.subject} className="flex items-center justify-between p-3 bg-[#FAFBFF] border-2 border-[#1F2937]/10 rounded-xl">
+                        <span className="font-heading font-black text-xs sm:text-sm text-foreground">{stat.subject}</span>
+                        <div className="text-right">
+                          <span className="block font-heading font-black text-sm sm:text-base text-[#FF4B4B]">
+                            -{stat.marksLost} Marks
+                          </span>
+                          <span className="font-mono text-[9px] font-bold text-secondary-text">
+                            {stat.sillyCount} mistakes
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+
+      {/* TEST ATTEMPT HISTORY LOG */}
+        <div className="neo-card bg-white border-2 sm:border-3 border-[#1F2937] p-3 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-neo-xs sm:shadow-neo space-y-4 sm:space-y-6 animate-in fade-in duration-200 w-full overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 border-b-2 border-[#1F2937]/15 pb-3 sm:pb-4">
+            <div>
+              <h2 className="text-sm sm:text-xl font-heading font-black text-foreground uppercase tracking-tight">
+                Completed Test History Log
+              </h2>
+              <p className="text-[11px] sm:text-xs font-bold text-secondary-text mt-0.5">
+                Review question breakdowns, solutions, and time spent on past attempts.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
+              {/* Search History */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchHistory}
+                  onChange={(e) => setSearchHistory(e.target.value)}
+                  placeholder="Filter attempts..."
+                  className="w-full pl-8 pr-3 py-1.5 rounded-xl border-2 border-[#1F2937] bg-white font-bold text-xs shadow-neo-xs outline-none focus:border-[#1CB0F6]"
+                />
+              </div>
+
               <button
                 type="button"
-                onClick={() => {
-                  clear()
-                  setConfirmClear(false)
-                }}
-                className="neo-btn bg-[#FF4B4B] text-white px-5 py-2 text-sm"
+                onClick={() => setConfirmClear(true)}
+                className="neo-btn bg-white text-[#FF4B4B] border-[#FF4B4B] px-3.5 py-1.5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-neo-xs whitespace-nowrap shrink-0"
               >
-                Delete everything
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmClear(false)}
-                className="neo-btn bg-white text-foreground px-5 py-2 text-sm"
-              >
-                Cancel
+                <Trash2 className="size-3.5" /> Clear History
               </button>
             </div>
           </div>
-        )}
 
-        <div className="mt-8 neo-card bg-card p-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[880px] border-collapse text-left">
-              <thead>
-                <tr className="border-b-3 border-border bg-[#FAFBFF]">
-                  {["Test", "Submitted", "Score", "%", "R / W / S", "Time", ""].map((h) => (
-                    <th
-                      key={h}
-                      scope="col"
-                      className="px-5 py-4 font-mono text-[10px] font-bold tracking-widest text-muted-foreground uppercase"
+          {confirmClear && (
+            <div className="border-3 border-[#FF4B4B] rounded-2xl bg-[#FFE5E5] p-5 shadow-neo-xs space-y-3">
+              <p className="text-sm font-black text-[#FF4B4B]">
+                Delete all {attempts.length} saved test attempts? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    clear()
+                    setConfirmClear(false)
+                  }}
+                  className="neo-btn bg-[#FF4B4B] text-white px-4 py-2 text-xs font-black uppercase"
+                >
+                  Confirm Delete All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmClear(false)}
+                  className="neo-btn bg-white text-foreground px-4 py-2 text-xs font-black uppercase"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Mobile Card List (Visible on sm and below) */}
+          <div className="grid grid-cols-1 gap-4 md:hidden max-h-[380px] overflow-y-auto pr-1">
+            {searchedAttempts.map((a) => {
+              const p = pct(a)
+              return (
+                <div key={a.id} className="border-[3px] border-[#1F2937] bg-white rounded-[20px] p-5 shadow-neo space-y-4 hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <Link href={`/results/${a.id}`} className="font-heading font-black text-sm sm:text-base text-foreground hover:text-[#1CB0F6] leading-tight line-clamp-2">
+                        {a.testTitle}
+                      </Link>
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                        <span className="font-mono text-[10px] font-black text-secondary-text uppercase bg-[#FAFBFF] border-2 border-[#1F2937]/10 px-2 py-0.5 rounded-lg">{a.kind}</span>
+                        <span className="font-mono text-[10px] text-secondary-text font-bold flex items-center gap-1">
+                          <Clock className="size-3" /> {new Date(a.submittedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 font-mono text-xs font-black border-2 rounded-xl px-2.5 py-1 shadow-neo-xs shrink-0",
+                        p >= 60 ? "text-[#58CC02] border-[#58CC02] bg-[#F0FFF4]" : "text-[#FF4B4B] border-[#FF4B4B] bg-[#FFE5E5]"
+                      )}
                     >
-                      {h}
-                    </th>
-                  ))}
+                      {p >= 60 ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
+                      {p.toFixed(1)}%
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t-2 border-[#1F2937]/5 pt-3">
+                    <div className="font-mono text-[11px] sm:text-xs font-bold text-secondary-text">
+                      Score: <span className="text-foreground font-black">{a.scored.toFixed(1)}</span>
+                      <span className="mx-1.5 sm:mx-2 text-[#1F2937]/20">|</span>
+                      {formatClock(a.durationSeconds)}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => remove(a.id)}
+                        className="p-2 rounded-xl border-2 border-border/40 hover:border-[#FF4B4B] text-secondary-text hover:text-[#FF4B4B] bg-[#FAFBFF] transition-all shadow-neo-xs"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                      <Link
+                        href={`/results/${a.id}`}
+                        className="neo-btn bg-[#1CB0F6] text-white px-4 py-1.5 text-xs font-black uppercase tracking-wider rounded-xl shadow-neo-sm"
+                      >
+                        Review
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Desktop Table (Visible on md and up) */}
+          <div className="hidden md:block overflow-auto w-full pb-2 rounded-xl border-[2.5px] border-[#1F2937] shadow-neo max-h-[500px]">
+            <table className="w-full min-w-[760px] text-left font-mono text-xs border-collapse">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-[#1F2937] text-white uppercase text-[11px] font-black">
+                  <th className="p-3 pl-4">Test Title</th>
+                  <th className="p-3">Date</th>
+                  <th className="p-3 text-right">Score</th>
+                  <th className="p-3 text-center">Outcome</th>
+                  <th className="p-3 text-right">R / W / S</th>
+                  <th className="p-3 text-right">Duration</th>
+                  <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((a) => {
+                {searchedAttempts.map((a) => {
                   const p = pct(a)
                   return (
-                    <tr key={a.id} className="border-b border-border transition-colors last:border-0 hover:bg-muted/30">
-                      <td className="px-5 py-4">
-                        <Link href={`/results/${a.id}`} className="text-[14px] font-bold transition-colors hover:text-[#1CB0F6]">
+                    <tr key={a.id} className="border-b border-[#1F2937]/10 hover:bg-[#FAFBFF] transition-colors">
+                      <td className="p-3">
+                        <Link href={`/results/${a.id}`} className="font-heading font-black text-sm text-foreground hover:text-[#1CB0F6]">
                           {a.testTitle}
                         </Link>
-                        <p className="mt-1 font-mono text-[11px] font-bold text-muted-foreground">{a.kind}</p>
+                        <span className="block font-mono text-[10px] text-secondary-text uppercase font-bold mt-0.5">{a.kind}</span>
                       </td>
-                      <td className="px-5 py-4 font-mono text-[12px] font-medium text-muted-foreground">
+                      <td className="p-3 text-secondary-text font-bold">
                         {new Date(a.submittedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                        <span className="ml-1.5">
-                          {new Date(a.submittedAt).toLocaleTimeString(undefined, {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
                       </td>
-                      <td className="px-5 py-4 font-mono text-[14px] font-black tabular-nums">
-                        {a.scored.toFixed(1)}
-                        <span className="text-muted-foreground text-[12px] ml-1 font-bold">/{a.totalMarks}</span>
+                      <td className="p-3 text-right font-black text-foreground text-sm">
+                        {a.scored.toFixed(1)} / {a.totalMarks}
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="p-3 text-center">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1.5 font-mono text-[14px] font-black tabular-nums border-2 rounded-lg px-2 py-1",
-                            p >= 60 ? "text-[#58CC02] border-[#58CC02] bg-[#E5F9D6]" : "text-[#FF4B4B] border-[#FF4B4B] bg-[#FFE5E5]",
+                            "inline-flex items-center gap-1 font-mono text-xs font-black border-2 rounded-lg px-2 py-0.5 shadow-neo-xs",
+                            p >= 60 ? "text-[#58CC02] border-[#58CC02] bg-[#F0FFF4]" : "text-[#FF4B4B] border-[#FF4B4B] bg-[#FFE5E5]"
                           )}
                         >
-                          {p >= 60 ? (
-                            <TrendingUp className="size-3.5" aria-hidden="true" />
-                          ) : (
-                            <TrendingDown className="size-3.5" aria-hidden="true" />
-                          )}
+                          {p >= 60 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                           {p.toFixed(1)}%
                         </span>
                       </td>
-                      <td className="px-5 py-4 font-mono text-[12px] font-bold tabular-nums text-muted-foreground">
-                        <span className="text-[#58CC02]">{a.correct}</span> / <span className="text-[#FF4B4B]">{a.wrong}</span>{" "}
-                        / {a.skipped}
+                      <td className="p-3 text-right font-bold text-secondary-text">
+                        <span className="text-[#58CC02]">{a.correct}</span> / <span className="text-[#FF4B4B]">{a.wrong}</span> / {a.skipped}
                       </td>
-                      <td className="px-5 py-4 font-mono text-[12px] font-bold tabular-nums text-muted-foreground">
+                      <td className="p-3 text-right font-bold text-secondary-text">
                         {formatClock(a.durationSeconds)}
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             href={`/results/${a.id}`}
-                            className="inline-flex items-center border-2 border-border rounded-lg bg-white px-3 py-1.5 min-h-11 font-mono text-xs font-bold tracking-wide transition-all shadow-neo-sm hover:-translate-y-0.5 hover:border-[#1CB0F6] hover:text-[#1CB0F6]"
+                            className="neo-btn bg-[#1CB0F6] text-white px-3 py-1 text-xs font-black uppercase tracking-wider"
                           >
                             Review
                           </Link>
                           <button
                             type="button"
                             onClick={() => remove(a.id)}
-                            aria-label={`Delete attempt from ${new Date(a.submittedAt).toLocaleString()}`}
-                            className="inline-flex items-center justify-center border-2 border-border rounded-lg bg-white p-2 min-h-11 min-w-11 text-muted-foreground shadow-neo-sm transition-all hover:-translate-y-0.5 hover:border-[#FF4B4B] hover:text-[#FF4B4B] hover:bg-[#FFE5E5]"
+                            className="p-1.5 rounded-lg border-2 border-border/40 hover:border-[#FF4B4B] text-secondary-text hover:text-[#FF4B4B] bg-white transition-all shadow-neo-xs"
+                            title="Delete attempt"
                           >
-                            <Trash2 className="size-4" />
+                            <Trash2 className="size-3.5" />
                           </button>
                         </div>
                       </td>
@@ -596,10 +581,8 @@ export function AttemptHistory() {
           </div>
         </div>
 
-        <p className="mt-4 font-mono text-[11px] leading-relaxed text-muted-foreground">
-          Attempts are stored in this browser only. Clearing site data will remove them.
-        </p>
-      </section>
+      {/* Generous bottom scroll clearance */}
+      <div className="h-12 w-full" aria-hidden="true" />
     </main>
   )
 }
