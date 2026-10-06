@@ -42,6 +42,8 @@ export function useCollection<K extends Collection>(
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const queryStr = JSON.stringify(query)
+  
   const fetch = useCallback(async () => {
     try {
       const records = await store.list(collection, query)
@@ -52,8 +54,7 @@ export function useCollection<K extends Collection>(
     } finally {
       setLoading(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collection])
+  }, [collection, queryStr])
 
   useEffect(() => {
     fetch()
@@ -239,6 +240,8 @@ export function useConcepts() {
 
 // ─── useDailyChallenge ────────────────────────────────────────────────────────
 
+let globalSeededFor: string | null = null
+
 export interface UseDailyChallengeResult {
   record: DailyChallenge | null
   question: Question | null
@@ -248,14 +251,6 @@ export interface UseDailyChallengeResult {
   reroll: () => Promise<void>
 }
 
-/**
- * Single source of truth for the Daily Challenge.
- *
- * - Seeds today's question once (same all day) via seedChallengeQuestionId.
- * - Streak increments on a correct answer only; a wrong answer resets to 0.
- * - The day locks after answering; reroll is only available before that.
- * - Also records a kind:"daily" StoredAttempt so it flows into history/analytics.
- */
 export function useDailyChallenge(): UseDailyChallengeResult {
   const { settings } = useSettings()
   const { questions, questionMap, loading: questionsLoading } = useQuestionBank()
@@ -279,12 +274,11 @@ export function useDailyChallenge(): UseDailyChallengeResult {
   const rerollCountRef = useRef(0)
 
   // Seed today's challenge once per day, after questions are ready.
-  const seededFor = useRef<string | null>(null)
   useEffect(() => {
     if (questionsLoading || recordsLoading) return
     if (todayRecord) return
-    if (seededFor.current === today) return
-    seededFor.current = today
+    if (globalSeededFor === today) return
+    globalSeededFor = today
     const qid = seedChallengeQuestionId(questions, SUBJECTS, subjectProgress, today, 0)
     if (qid) {
       void put({
@@ -301,51 +295,58 @@ export function useDailyChallenge(): UseDailyChallengeResult {
 
   const streak = useMemo(() => getDailyChallengeStreak(data, today), [data, today])
 
+  const isSubmittingRef = useRef(false)
   const submit = useCallback(
     async (response: Response): Promise<{ correct: boolean; streak: number }> => {
       if (!todayRecord || !question) return { correct: false, streak: 0 }
+      if (isSubmittingRef.current) return { correct: false, streak: 0 }
       // Day locked once answered — return the stored outcome.
       if (todayRecord.solved) {
         return { correct: todayRecord.correct === true, streak: todayRecord.streak }
       }
 
-      const correct = isCorrect(question, response)
-      const yesterday = data.find((r) => r.id === getDateOffsetIso(today, -1))
-      const nextStreak = correct ? (yesterday?.correct ? yesterday.streak : 0) + 1 : 0
-      const answeredAt = new Date().toISOString()
+      isSubmittingRef.current = true
+      try {
+        const correct = isCorrect(question, response)
+        const yesterday = data.find((r) => r.id === getDateOffsetIso(today, -1))
+        const nextStreak = correct ? (yesterday?.correct ? yesterday.streak : 0) + 1 : 0
+        const answeredAt = new Date().toISOString()
 
-      await put({
-        ...todayRecord,
-        solved: true,
-        correct,
-        streak: nextStreak,
-        answeredAt,
-      } satisfies DailyChallenge)
+        await put({
+          ...todayRecord,
+          solved: true,
+          correct,
+          streak: nextStreak,
+          answeredAt,
+        } satisfies DailyChallenge)
 
-      // Record a StoredAttempt (kind "daily") so it shows in history/analytics.
-      const result = scoreAttempt([question], { [question.id]: response })
-      void getStore().put(COLLECTIONS.attempts, {
-        userId: LOCAL_USER_ID,
-        examId: activeExamId,
-        id: newAttemptId(),
-        testId: `daily-${today}`,
-        testTitle: "Daily Challenge",
-        kind: "daily",
-        subject: question.subject,
-        questionIds: [question.id],
-        submittedAt: answeredAt,
-        durationSeconds: 0,
-        responses: { [question.id]: response },
-        timePerQuestion: {},
-        markedForReview: [],
-        scored: result.scored,
-        totalMarks: result.totalMarks,
-        correct: result.correct,
-        wrong: result.wrong,
-        skipped: result.skipped,
-      } satisfies StoredAttempt)
+        // Record a StoredAttempt (kind "daily") so it shows in history/analytics.
+        const result = scoreAttempt([question], { [question.id]: response })
+        void getStore().put(COLLECTIONS.attempts, {
+          userId: LOCAL_USER_ID,
+          examId: activeExamId,
+          id: newAttemptId(),
+          testId: `daily-${today}`,
+          testTitle: "Daily Challenge",
+          kind: "daily",
+          subject: question.subject,
+          questionIds: [question.id],
+          submittedAt: answeredAt,
+          durationSeconds: 0,
+          responses: { [question.id]: response },
+          timePerQuestion: {},
+          markedForReview: [],
+          scored: result.scored,
+          totalMarks: result.totalMarks,
+          correct: result.correct,
+          wrong: result.wrong,
+          skipped: result.skipped,
+        } satisfies StoredAttempt)
 
-      return { correct, streak: nextStreak }
+        return { correct, streak: nextStreak }
+      } finally {
+        isSubmittingRef.current = false
+      }
     },
     [todayRecord, question, data, today, put, activeExamId],
   )
@@ -373,4 +374,3 @@ export function useDailyChallenge(): UseDailyChallengeResult {
     reroll,
   }
 }
-

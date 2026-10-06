@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, Suspense } from "react"
+import { useState, useMemo, Suspense, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
@@ -35,7 +35,12 @@ import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { DiagramRenderer } from "@/components/diagram-renderer"
 import 'katex/dist/katex.min.css'
-import Latex from 'react-latex-next'
+import dynamic from 'next/dynamic'
+
+const Latex = dynamic(() => import('react-latex-next'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-200 h-4 rounded w-16 inline-block" />
+})
 
 type StatusFilter = "all" | "mastered" | "learning" | "untouched"
 
@@ -184,8 +189,19 @@ function MapContent() {
     return Array.from(map.values())
   }, [subjectConcepts])
 
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery)
+  const [visibleCount, setVisibleCount] = useState(20)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+      setVisibleCount(20) // Reset pagination on search
+    }, 300)
+    return () => clearTimeout(handler)
+  }, [searchQuery])
+
   // Filtered concepts based on topic, status filter, and search query
-  const filteredConcepts = useMemo(() => {
+  const allFilteredConcepts = useMemo(() => {
     let result = subjectConcepts
     if (selectedTopicId !== "ALL") {
       result = result.filter((c: any) => (c.category || "general") === selectedTopicId)
@@ -201,8 +217,8 @@ function MapContent() {
       })
     }
 
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
+    if (debouncedSearchQuery) {
+      const q = debouncedSearchQuery.toLowerCase()
       result = result.filter((c: any) => 
         c.label.toLowerCase().includes(q) || 
         c.summary.toLowerCase().includes(q) ||
@@ -212,7 +228,11 @@ function MapContent() {
       )
     }
     return result
-  }, [subjectConcepts, selectedTopicId, statusFilter, searchQuery, conceptMasteryMap])
+  }, [subjectConcepts, selectedTopicId, statusFilter, debouncedSearchQuery, conceptMasteryMap])
+
+  const filteredConcepts = useMemo(() => {
+    return allFilteredConcepts.slice(0, visibleCount)
+  }, [allFilteredConcepts, visibleCount])
 
   // Helper to find matching drill URL for a concept
   const getConceptDrillLink = (concept: Concept): string => {
@@ -440,7 +460,7 @@ function MapContent() {
           </div>
 
           {/* Middle Row: Filters (Subject & Topic) */}
-          <div className="flex flex-row items-center gap-2.5 w-full">
+          <div className="flex flex-col md:flex-row md:items-center gap-2.5 w-full">
             <select
               value={activeSubjectId || ""}
               onChange={(e) => router.push(`/map?subject=${e.target.value}`)}
@@ -769,6 +789,17 @@ function MapContent() {
         })()}
 
       </div>
+
+      {allFilteredConcepts.length > visibleCount && (
+        <div className="flex justify-center pt-8 pb-12">
+          <button
+            onClick={() => setVisibleCount((prev) => prev + 20)}
+            className="neo-btn bg-[#FF9600] text-white px-8 py-3 rounded-2xl font-heading font-black uppercase tracking-wider shadow-neo"
+          >
+            Load More Concepts ({allFilteredConcepts.length - visibleCount} left)
+          </button>
+        </div>
+      )}
     </main>
   )
 }

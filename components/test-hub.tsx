@@ -74,7 +74,7 @@ function TestCard({ test }: { test: TestDefinition }) {
           <h3 className="mt-2 md:mt-3 text-[14px] sm:text-[16px] md:text-[18px] font-heading font-bold text-primary-text leading-tight">{test.title}</h3>
         </div>
         {ready && best !== null && (
-          <div className="shrink-0 text-right bg-[#FFC800] px-2 md:px-3 py-1 md:py-1.5 rounded-[8px] md:rounded-[12px] border-[2px] md:border-[3px] border-[#1F2937] shadow-neo-sm">
+          <div className="shrink-0 text-right bg-[#FFC800] px-2 md:px-3 py-1 md:py-1.5 rounded-[8px] md:rounded-[12px] border-[2px] md:border-2 border-[#1F2937] shadow-neo-sm">
             <p className="font-heading font-black text-[14px] md:text-[20px] text-[#1F2937] leading-none">{best.toFixed(1)}</p>
             <p className="font-heading text-[8px] md:text-[10px] text-[#1F2937] uppercase tracking-wider font-black mt-0.5 md:mt-1">Best</p>
           </div>
@@ -99,7 +99,7 @@ function TestCard({ test }: { test: TestDefinition }) {
       <Link
         href={`/tests/${test.id}`}
         className={cn(
-          "mt-3 md:mt-6 inline-flex items-center justify-center gap-1.5 md:gap-2 px-2 md:px-4 py-1.5 md:py-2.5 rounded-[8px] md:rounded-[12px] font-heading font-black text-[11px] md:text-[14px] transition-all w-full border-[2px] md:border-[3px] border-[#1F2937] shadow-neo-sm hover:-translate-y-0.5 active:translate-y-1 active:translate-x-1 active:shadow-none uppercase",
+          "mt-3 md:mt-6 inline-flex items-center justify-center gap-1.5 md:gap-2 px-2 md:px-4 py-1.5 md:py-2.5 rounded-[8px] md:rounded-[12px] font-heading font-black text-[11px] md:text-[14px] transition-all w-full border-[2px] md:border-2 border-[#1F2937] shadow-neo-sm hover:-translate-y-0.5 active:translate-y-1 active:translate-x-1 active:shadow-none uppercase",
           history.length > 0 
             ? "bg-[#FF9600] text-white"
             : "bg-[#58CC02] text-white"
@@ -276,7 +276,7 @@ export function TestHub() {
     <div className="relative z-10 pt-2 md:pt-10 pb-28 md:pb-56 px-3 sm:px-4 md:px-6 max-w-5xl mx-auto space-y-4 md:space-y-8 animate-in fade-in duration-500">
       
       {/* Header section */}
-      <div className="bg-[#FFF8EE] border-[3px] border-[#1F2937] rounded-2xl sm:rounded-3xl p-4 md:p-8 shadow-neo relative overflow-hidden mb-4 sm:mb-8">
+      <div className="bg-[#FFF8EE] border-2 border-[#1F2937] rounded-2xl sm:rounded-3xl p-4 md:p-8 shadow-neo relative overflow-hidden mb-4 sm:mb-8">
         <div className="absolute -top-10 -right-10 size-40 bg-[#FFB020] opacity-20 rounded-full blur-3xl"></div>
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 relative z-10">
@@ -312,7 +312,7 @@ export function TestHub() {
       {/* Filter Tabs & Search Controls */}
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center justify-between">
         {/* 3-Pill Tab Layout (Responsive grid) */}
-        <div className="grid grid-cols-3 gap-1 p-1 bg-white border-[3px] border-[#1F2937] rounded-[16px] shadow-neo-sm w-full sm:w-auto">
+        <div className="grid grid-cols-3 gap-1 p-1 bg-white border-2 border-[#1F2937] rounded-[16px] shadow-neo-sm w-full sm:w-auto">
           {(
             [
               ["all", `All (${counts.all})`],
@@ -345,7 +345,7 @@ export function TestHub() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search drills, mocks, topics..."
-            className="w-full bg-white border-[3px] border-[#1F2937] rounded-[16px] pl-10 pr-10 py-2 sm:py-2.5 font-bold text-xs sm:text-sm text-[#1F2937] placeholder:text-muted-foreground shadow-neo-sm outline-none focus:border-[#1CB0F6] transition-colors"
+            className="w-full bg-white border-2 border-[#1F2937] rounded-[16px] pl-10 pr-10 py-2 sm:py-2.5 font-bold text-xs sm:text-sm text-[#1F2937] placeholder:text-muted-foreground shadow-neo-sm outline-none focus:border-[#1CB0F6] transition-colors"
           />
           {searchQuery && (
             <button
@@ -363,7 +363,7 @@ export function TestHub() {
       {/* CUSTOM TEST BUILDER MODAL */}
       {showCustomBuilder && (
         <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center pt-[70px] pb-[80px] px-3 md:p-6 overflow-hidden animate-in fade-in duration-200">
-          <div className="neo-card bg-white border-[3px] border-[#1F2937] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 max-w-3xl w-full shadow-neo max-h-full overflow-y-auto space-y-5 sm:space-y-6 flex flex-col">
+          <div className="neo-card bg-white border-2 border-[#1F2937] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 max-w-3xl w-full shadow-neo max-h-full overflow-y-auto space-y-5 sm:space-y-6 flex flex-col">
             {/* Modal Header */}
             <div className="flex items-start justify-between border-b-2 border-[#1F2937]/15 pb-4">
               <div>
@@ -578,9 +578,9 @@ export function TestHub() {
               <button
                 key={sub.id}
                 onClick={() => setSelectedSubjectId(sub.id)}
-                className="text-left w-full"
+                className="text-left w-full group"
               >
-                <Card className="p-5 h-full hover:shadow-md transition-shadow group border-[3px] border-[#1F2937] hover:-translate-y-1 hover:translate-x-1 hover:shadow-none shadow-neo-sm transition-all bg-white rounded-[16px]">
+                <Card className="p-5 h-full transition-all border-2 border-[#1F2937] hover:-translate-y-1 hover:translate-x-1 shadow-neo-sm hover:shadow-neo bg-white rounded-[16px]">
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="font-heading font-black text-[18px] text-[#1F2937] group-hover:text-[#6C8EF2] transition-colors line-clamp-2">
@@ -590,7 +590,7 @@ export function TestHub() {
                         {sub.weightage} Marks Weightage
                       </p>
                     </div>
-                    <div className="size-10 rounded-full border-[3px] border-[#1F2937] bg-[#E5F9D6] flex items-center justify-center shrink-0 group-hover:bg-[#58CC02] transition-colors">
+                    <div className="size-10 rounded-full border-2 border-[#1F2937] bg-[#E5F9D6] flex items-center justify-center shrink-0 group-hover:bg-[#58CC02] transition-colors">
                       <FileText className="size-5 text-[#1F2937]" strokeWidth={3} />
                     </div>
                   </div>
@@ -627,7 +627,7 @@ export function TestHub() {
                 <TestCard key={t.id} test={t} />
               ))
             ) : (
-              <div className="col-span-full py-12 text-center text-secondary-text bg-white border-[3px] border-[#1F2937] rounded-[24px] shadow-neo-sm">
+              <div className="col-span-full py-12 text-center text-secondary-text bg-white border-2 border-[#1F2937] rounded-[24px] shadow-neo-sm">
                 <FileText className="size-12 mx-auto mb-4 opacity-30" />
                 <p className="font-heading font-bold text-[18px]">No tests matching your criteria.</p>
                 <p className="text-[14px] mt-1">Try a different search term or category filter.</p>

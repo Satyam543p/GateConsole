@@ -96,7 +96,7 @@ export function KeyboardShortcutsModal({
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-2xl border-2 border-primary bg-card p-6 font-mono space-y-6 shadow-2xl">
+      <div className="w-full max-w-2xl border-2 border-primary bg-card p-6 font-mono space-y-6 shadow-neo rounded-[16px]">
         <div className="flex items-center justify-between border-b border-border pb-4">
           <div className="flex items-center gap-2 text-foreground font-bold">
             <Keyboard className="size-5 text-primary" />

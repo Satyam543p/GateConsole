@@ -365,7 +365,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
 
   type GateStatus = "not-visited" | "not-answered" | "answered" | "marked" | "answered-marked"
 
-  const gateStatusOf = (qid: string): GateStatus => {
+  const gateStatusOf = useCallback((qid: string): GateStatus => {
     const isAns = isAttempted(responses[qid] ?? null)
     const isMrk = !!marked[qid]
     const isVis = !!visited[qid]
@@ -375,7 +375,7 @@ export function ExamRunner({ test }: { test: TestDefinition }) {
     if (isAns) return "answered"
     if (isVis) return "not-answered"
     return "not-visited"
-  }
+  }, [responses, marked, visited])
 
   const statusCounts = useMemo(() => {
     let ans = 0, notAns = 0, mrk = 0, ansMrk = 0, notVis = 0

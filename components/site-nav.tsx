@@ -18,6 +18,7 @@ import {
 import { useSettings, useDailyChallenge } from "@/lib/storage/hooks"
 import { EXAMS, GATE_DOMAINS } from "@/lib/exams/registry"
 import { Logo } from "@/components/logo"
+import { InstallPrompt } from "@/components/install-prompt"
 
 const NAV_ITEMS = [
   { href: "/", label: "Today", icon: Home },
@@ -141,6 +142,8 @@ export function SiteNav() {
               </div>
             )}
 
+            <InstallPrompt isExpanded={isExpanded} isMobile={false} />
+
             <Link
               href="/settings"
               title="Settings"
@@ -168,6 +171,7 @@ export function SiteNav() {
         <Logo isExpanded={true} />
         
         <div className="flex items-center gap-2">
+          <InstallPrompt isExpanded={true} isMobile={true} />
           {/* STREAK BADGE */}
           <div className="flex items-center gap-1.5 bg-[#FF9600] border-[2px] border-[#1F2937] text-white px-3 py-1.5 rounded-full shadow-neo-xs">
             <Flame className="size-4 fill-white text-white animate-pulse" strokeWidth={2} />

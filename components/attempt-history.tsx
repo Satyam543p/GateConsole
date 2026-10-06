@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import {
   ArrowRight,
   Trash2,
@@ -42,16 +42,31 @@ export function AttemptHistory() {
   const sillyStats = useMemo(() => getSillyMistakeIndex(mistakes || [], questionMap), [mistakes, questionMap])
   const nextAction = useMemo(() => getHighestYieldHourSuggestion(attempts, yieldStats, timeBleeds, sillyStats), [attempts, yieldStats, timeBleeds, sillyStats])
 
-  const searchedAttempts = useMemo(() => {
-    if (!searchHistory.trim()) return attempts
-    const q = searchHistory.toLowerCase().trim()
+  const [debouncedSearchHistory, setDebouncedSearchHistory] = useState(searchHistory)
+  const [visibleCount, setVisibleCount] = useState(15)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchHistory(searchHistory)
+      setVisibleCount(15) // Reset pagination on search
+    }, 300)
+    return () => clearTimeout(handler)
+  }, [searchHistory])
+
+  const allSearchedAttempts = useMemo(() => {
+    if (!debouncedSearchHistory.trim()) return attempts
+    const q = debouncedSearchHistory.toLowerCase().trim()
     return attempts.filter(
       (a) =>
         a.testTitle.toLowerCase().includes(q) ||
         (a.subject && a.subject.toLowerCase().includes(q)) ||
         a.kind.toLowerCase().includes(q)
     )
-  }, [attempts, searchHistory])
+  }, [attempts, debouncedSearchHistory])
+
+  const searchedAttempts = useMemo(() => {
+    return allSearchedAttempts.slice(0, visibleCount)
+  }, [allSearchedAttempts, visibleCount])
 
   /** Aggregate per-subject accuracy across every attempt. */
   const subjectStats = useMemo(() => {
@@ -103,7 +118,7 @@ export function AttemptHistory() {
           <ArrowRight className="size-3.5 rotate-180" /> Back to Dashboard
         </Link>
 
-        <div className="neo-card bg-white border-2 sm:border-3 border-[#1F2937] p-5 sm:p-10 text-center rounded-2xl sm:rounded-3xl shadow-neo-xs sm:shadow-neo space-y-3">
+        <div className="neo-card bg-white border-2 sm:border-2 border-[#1F2937] p-5 sm:p-10 text-center rounded-2xl sm:rounded-3xl shadow-neo-xs sm:shadow-neo space-y-3">
           <BarChart3 className="size-10 sm:size-14 text-[#1CB0F6] mx-auto" />
           <h1 className="text-lg sm:text-2xl font-heading font-black text-foreground uppercase tracking-tight">
             No Test Attempts Recorded Yet
@@ -136,7 +151,7 @@ export function AttemptHistory() {
           <ArrowRight className="size-3.5 rotate-180" /> Back to Dashboard
         </Link>
 
-        <div className="bg-[#F0FFF4] border-[3px] border-[#1F2937] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-neo relative overflow-hidden">
+        <div className="bg-[#F0FFF4] border-2 border-[#1F2937] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-neo relative overflow-hidden">
           {/* Decorative element */}
           <div className="absolute -top-10 -right-10 size-40 bg-[#58CC02] opacity-20 rounded-full blur-3xl"></div>
           
@@ -171,7 +186,7 @@ export function AttemptHistory() {
       </header>
 
       {/* HERO PREDICTIVE AI CARD */}
-      <div className="neo-card bg-[#FAFBFF] border-2 sm:border-3 border-[#1F2937] p-2.5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-neo-xs sm:shadow-neo space-y-2.5 sm:space-y-6 overflow-hidden">
+      <div className="neo-card bg-[#FAFBFF] border-2 sm:border-2 border-[#1F2937] p-2.5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-neo-xs sm:shadow-neo space-y-2.5 sm:space-y-6 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 border-b-2 border-[#1F2937]/15 pb-2.5 sm:pb-4">
           <div className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-xs font-black text-[#1899D6] uppercase tracking-wider">
             <Sparkles className="size-3.5 sm:size-4 text-[#1CB0F6] shrink-0" />
@@ -185,7 +200,7 @@ export function AttemptHistory() {
         {/* 4 Core Intelligence Metrics (2x2 on mobile, 4-col on desktop) */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* Predicted Raw Marks */}
-          <div className="bg-white border-[3px] border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
+          <div className="bg-white border-2 border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
             <p className="text-[10px] sm:text-[11px] font-heading font-black uppercase text-secondary-text tracking-wider">Predicted Raw</p>
             <div className="flex items-baseline gap-1 min-w-0">
               <span className="font-heading text-3xl md:text-4xl font-black text-foreground tabular-nums tracking-tighter">
@@ -199,7 +214,7 @@ export function AttemptHistory() {
           </div>
 
           {/* Normalized Score */}
-          <div className="bg-white border-[3px] border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
+          <div className="bg-white border-2 border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
             <p className="text-[10px] sm:text-[11px] font-heading font-black uppercase text-secondary-text tracking-wider">GATE Score</p>
             <div className="flex items-baseline gap-1 min-w-0">
               <span className="font-heading text-3xl md:text-4xl font-black text-[#58CC02] tabular-nums tracking-tighter">
@@ -213,7 +228,7 @@ export function AttemptHistory() {
           </div>
 
           {/* Predicted AIR */}
-          <div className="bg-white border-[3px] border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
+          <div className="bg-white border-2 border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
             <p className="text-[10px] sm:text-[11px] font-heading font-black uppercase text-secondary-text tracking-wider">AIR Rank</p>
             <div className="min-w-0">
               <span className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-[#CE82FF] truncate block leading-tight tracking-tighter">
@@ -226,7 +241,7 @@ export function AttemptHistory() {
           </div>
 
           {/* Admission Tier */}
-          <div className="bg-white border-[3px] border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
+          <div className="bg-white border-2 border-[#1F2937] p-3 sm:p-5 rounded-xl sm:rounded-2xl shadow-neo hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform flex flex-col gap-1">
             <p className="text-[10px] sm:text-[11px] font-heading font-black uppercase text-secondary-text tracking-wider">Admissions</p>
             <div className="min-w-0 flex-1">
               <span className="font-heading text-xs sm:text-sm md:text-base font-black text-[#1CB0F6] leading-snug line-clamp-3">
@@ -244,7 +259,7 @@ export function AttemptHistory() {
 
       <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
         {/* HIGHEST-YIELD ACTION BANNER */}
-        <div className="neo-card bg-white border-[3px] border-[#1F2937] p-4 sm:p-6 rounded-2xl shadow-neo flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="neo-card bg-white border-2 border-[#1F2937] p-4 sm:p-6 rounded-2xl shadow-neo flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="font-mono text-[10px] sm:text-xs font-black text-[#FF4B4B] uppercase tracking-wider flex items-center gap-1.5">
               <TrendingUp className="size-3.5" /> Highest-Yield Action
@@ -390,7 +405,7 @@ export function AttemptHistory() {
         </div>
 
       {/* TEST ATTEMPT HISTORY LOG */}
-        <div className="neo-card bg-white border-2 sm:border-3 border-[#1F2937] p-3 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-neo-xs sm:shadow-neo space-y-4 sm:space-y-6 animate-in fade-in duration-200 w-full overflow-hidden">
+        <div className="neo-card bg-white border-2 sm:border-2 border-[#1F2937] p-3 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-neo-xs sm:shadow-neo space-y-4 sm:space-y-6 animate-in fade-in duration-200 w-full overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 border-b-2 border-[#1F2937]/15 pb-3 sm:pb-4">
             <div>
               <h2 className="text-sm sm:text-xl font-heading font-black text-foreground uppercase tracking-tight">
@@ -425,7 +440,7 @@ export function AttemptHistory() {
           </div>
 
           {confirmClear && (
-            <div className="border-3 border-[#FF4B4B] rounded-2xl bg-[#FFE5E5] p-5 shadow-neo-xs space-y-3">
+            <div className="border-2 border-[#FF4B4B] rounded-2xl bg-[#FFE5E5] p-5 shadow-neo-xs space-y-3">
               <p className="text-sm font-black text-[#FF4B4B]">
                 Delete all {attempts.length} saved test attempts? This action cannot be undone.
               </p>
@@ -456,7 +471,7 @@ export function AttemptHistory() {
             {searchedAttempts.map((a) => {
               const p = pct(a)
               return (
-                <div key={a.id} className="border-[3px] border-[#1F2937] bg-white rounded-[20px] p-5 shadow-neo space-y-4 hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform">
+                <div key={a.id} className="border-2 border-[#1F2937] bg-white rounded-[20px] p-5 shadow-neo space-y-4 hover:translate-x-0.5 hover:-translate-y-0.5 transition-transform">
                   <div className="flex justify-between items-start gap-2">
                     <div>
                       <Link href={`/results/${a.id}`} className="font-heading font-black text-sm sm:text-base text-foreground hover:text-[#1CB0F6] leading-tight line-clamp-2">
@@ -580,6 +595,17 @@ export function AttemptHistory() {
             </table>
           </div>
         </div>
+
+        {allSearchedAttempts.length > visibleCount && (
+          <div className="flex justify-center pt-6 pb-2">
+            <button
+              onClick={() => setVisibleCount((prev) => prev + 15)}
+              className="neo-btn bg-[#FF9600] text-white px-8 py-3 rounded-2xl font-heading font-black uppercase tracking-wider shadow-neo text-sm"
+            >
+              Load More Attempts ({allSearchedAttempts.length - visibleCount} left)
+            </button>
+          </div>
+        )}
 
       {/* Generous bottom scroll clearance */}
       <div className="h-12 w-full" aria-hidden="true" />
