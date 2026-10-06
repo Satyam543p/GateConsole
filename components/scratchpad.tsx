@@ -20,49 +20,49 @@ export function Scratchpad({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 w-[min(24rem,calc(100vw-2rem))] border-2 border-primary bg-card shadow-2xl font-mono">
+    <div className="fixed bottom-6 left-6 z-50 w-[min(24rem,calc(100vw-2rem))] border-[3px] border-[#1F2937] bg-white shadow-neo rounded-2xl overflow-hidden font-mono">
       {/* Header */}
-      <div className="bg-primary px-3 py-2 text-primary-foreground flex items-center justify-between font-bold text-xs uppercase tracking-wider">
-        <span className="flex items-center gap-1.5">
-          <FileEdit className="size-3.5" />
-          Digital Exam Scratchpad
+      <div className="bg-[#CE82FF] border-b-[3px] border-[#1F2937] px-3 py-2.5 text-white flex items-center justify-between font-black text-[11px] uppercase tracking-wider">
+        <span className="flex items-center gap-2">
+          <FileEdit className="size-4" strokeWidth={2.5} />
+          Digital Scratchpad
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => setText("")}
-            className="hover:opacity-75 transition-opacity"
+            className="hover:bg-white/20 p-1.5 rounded-md transition-colors"
             title="Clear Scratchpad"
           >
-            <Trash2 className="size-3.5" />
+            <Trash2 className="size-3.5" strokeWidth={2.5} />
           </button>
           <button
             type="button"
             onClick={handleCopy}
-            className="hover:opacity-75 transition-opacity"
+            className="hover:bg-white/20 p-1.5 rounded-md transition-colors"
             title="Copy Text"
           >
-            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+            {copied ? <Check className="size-3.5" strokeWidth={2.5} /> : <Copy className="size-3.5" strokeWidth={2.5} />}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="hover:opacity-75 transition-opacity"
+            className="hover:bg-white/20 p-1.5 rounded-md transition-colors"
           >
-            <X className="size-4" />
+            <X className="size-4" strokeWidth={2.5} />
           </button>
         </div>
       </div>
 
       {/* Text Area */}
-      <div className="p-3">
+      <div className="p-3 bg-[#FAFBFF]">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Use this scratchpad for rough calculations, variable tracking, or binary/hex steps..."
-          className="w-full h-48 border border-border bg-background p-3 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-primary outline-none resize-none"
+          className="w-full h-48 border-[3px] border-[#1F2937] bg-white p-3 font-mono text-xs text-[#1F2937] placeholder:text-muted-foreground focus:outline-none focus:ring-4 focus:ring-[#CE82FF]/30 resize-none rounded-xl shadow-neo-sm transition-all"
         />
-        <p className="mt-1.5 text-[10px] text-muted-foreground text-right">
+        <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-[#CE82FF] text-right px-1">
           {text.length} characters
         </p>
       </div>

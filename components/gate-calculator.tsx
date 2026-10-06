@@ -129,89 +129,89 @@ export function GateCalculator({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-80 border-2 border-primary bg-card shadow-2xl font-mono select-none">
+    <div className="fixed bottom-6 right-6 z-50 w-80 border-[3px] border-[#1F2937] bg-white shadow-neo rounded-2xl overflow-hidden font-mono select-none">
       {/* Draggable Header */}
-      <div className="bg-primary px-3 py-2 text-primary-foreground flex items-center justify-between font-bold text-xs uppercase tracking-wider">
-        <span className="flex items-center gap-1.5">
-          <CalcIcon className="size-3.5" />
-          GATE Scientific Calculator
+      <div className="bg-[#1CB0F6] border-b-[3px] border-[#1F2937] px-3 py-2.5 text-white flex items-center justify-between font-black text-[11px] uppercase tracking-wider">
+        <span className="flex items-center gap-2">
+          <CalcIcon className="size-4" strokeWidth={2.5} />
+          GATE Scientific
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="hover:opacity-75 transition-opacity"
+          className="hover:bg-white/20 p-1 rounded-md transition-colors"
         >
-          <X className="size-4" />
+          <X className="size-4" strokeWidth={2.5} />
         </button>
       </div>
 
       {/* Screen */}
-      <div className="p-3 bg-muted/20 border-b border-border">
-        <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+      <div className="p-4 bg-[#FAFBFF] border-b-[3px] border-[#1F2937] shadow-[inset_0_-2px_4px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-between text-[10px] text-[#1F2937] mb-2 font-bold">
           <button
             type="button"
             onClick={() => setIsRad(!isRad)}
-            className="border border-border px-1.5 py-0.5 text-[9px] uppercase bg-background font-semibold text-primary"
+            className="border-2 border-[#1F2937] px-2 py-0.5 rounded-md text-[10px] uppercase bg-[#FF9600] text-white shadow-neo-xs hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"
           >
             {isRad ? "Rad" : "Deg"}
           </button>
-          <span>M: {memory}</span>
+          <span className="bg-white border-2 border-[#1F2937] px-2 py-0.5 rounded-md shadow-neo-xs">M: {memory}</span>
         </div>
-        <div className="text-right text-xl font-mono font-bold tracking-wider text-foreground overflow-x-auto py-1">
+        <div className="text-right text-3xl font-mono font-black tracking-tight text-[#1F2937] overflow-x-auto py-1">
           {display}
         </div>
       </div>
 
       {/* Calculator Buttons Grid */}
-      <div className="p-3 grid grid-cols-5 gap-1 text-[11px]">
+      <div className="p-3 grid grid-cols-5 gap-1.5 text-[11px] bg-[#E5F6FF]">
         {/* Row 1: Memory */}
-        <button onClick={() => setMemory(0)} className="border border-border bg-background p-1.5 hover:bg-muted text-[10px]">MC</button>
-        <button onClick={() => setDisplay(String(memory))} className="border border-border bg-background p-1.5 hover:bg-muted text-[10px]">MR</button>
-        <button onClick={() => setMemory(parseFloat(display) || 0)} className="border border-border bg-background p-1.5 hover:bg-muted text-[10px]">MS</button>
-        <button onClick={() => setMemory(memory + (parseFloat(display) || 0))} className="border border-border bg-background p-1.5 hover:bg-muted text-[10px]">M+</button>
-        <button onClick={() => setMemory(memory - (parseFloat(display) || 0))} className="border border-border bg-background p-1.5 hover:bg-muted text-[10px]">M-</button>
+        <button onClick={() => setMemory(0)} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">MC</button>
+        <button onClick={() => setDisplay(String(memory))} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">MR</button>
+        <button onClick={() => setMemory(parseFloat(display) || 0)} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">MS</button>
+        <button onClick={() => setMemory(memory + (parseFloat(display) || 0))} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">M+</button>
+        <button onClick={() => setMemory(memory - (parseFloat(display) || 0))} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">M-</button>
 
         {/* Row 2: Trig */}
-        <button onClick={() => handleScientificFunc("sin")} className="border border-border bg-background p-1.5 hover:bg-muted">sin</button>
-        <button onClick={() => handleScientificFunc("cos")} className="border border-border bg-background p-1.5 hover:bg-muted">cos</button>
-        <button onClick={() => handleScientificFunc("tan")} className="border border-border bg-background p-1.5 hover:bg-muted">tan</button>
-        <button onClick={handleClear} className="border border-red-500/40 bg-red-500/10 text-red-400 p-1.5 hover:bg-red-500/20 font-bold">C</button>
-        <button onClick={handleBackspace} className="border border-amber-500/40 bg-amber-500/10 text-amber-400 p-1.5 hover:bg-amber-500/20">←</button>
+        <button onClick={() => handleScientificFunc("sin")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">sin</button>
+        <button onClick={() => handleScientificFunc("cos")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">cos</button>
+        <button onClick={() => handleScientificFunc("tan")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">tan</button>
+        <button onClick={handleClear} className="border-2 border-[#1F2937] bg-[#FF4B4B] p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black transition-all text-white">C</button>
+        <button onClick={handleBackspace} className="border-2 border-[#1F2937] bg-[#CE82FF] p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black transition-all text-white">←</button>
 
         {/* Row 3: Advanced Math */}
-        <button onClick={() => handleScientificFunc("asin")} className="border border-border bg-background p-1.5 hover:bg-muted text-[10px]">asin</button>
-        <button onClick={() => handleScientificFunc("acos")} className="border border-border bg-background p-1.5 hover:bg-muted text-[10px]">acos</button>
-        <button onClick={() => handleScientificFunc("atan")} className="border border-border bg-background p-1.5 hover:bg-muted text-[10px]">atan</button>
-        <button onClick={() => handleScientificFunc("log")} className="border border-border bg-background p-1.5 hover:bg-muted">log</button>
-        <button onClick={() => handleScientificFunc("ln")} className="border border-border bg-background p-1.5 hover:bg-muted">ln</button>
+        <button onClick={() => handleScientificFunc("asin")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">asin</button>
+        <button onClick={() => handleScientificFunc("acos")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">acos</button>
+        <button onClick={() => handleScientificFunc("atan")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">atan</button>
+        <button onClick={() => handleScientificFunc("log")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">log</button>
+        <button onClick={() => handleScientificFunc("ln")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">ln</button>
 
         {/* Row 4: Power & Roots + Digits */}
-        <button onClick={() => handleScientificFunc("sqrt")} className="border border-border bg-background p-1.5 hover:bg-muted">√</button>
-        <button onClick={() => handleNum("7")} className="border border-border bg-card p-1.5 hover:bg-muted font-bold text-sm">7</button>
-        <button onClick={() => handleNum("8")} className="border border-border bg-card p-1.5 hover:bg-muted font-bold text-sm">8</button>
-        <button onClick={() => handleNum("9")} className="border border-border bg-card p-1.5 hover:bg-muted font-bold text-sm">9</button>
-        <button onClick={() => handleOp("/")} className="border border-border bg-background p-1.5 hover:bg-muted text-primary font-bold">÷</button>
+        <button onClick={() => handleScientificFunc("sqrt")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">√</button>
+        <button onClick={() => handleNum("7")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-[#1F2937]">7</button>
+        <button onClick={() => handleNum("8")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-[#1F2937]">8</button>
+        <button onClick={() => handleNum("9")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-[#1F2937]">9</button>
+        <button onClick={() => handleOp("/")} className="border-2 border-[#1F2937] bg-[#FF9600] p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-white">÷</button>
 
         {/* Row 5 */}
-        <button onClick={() => handleScientificFunc("sqr")} className="border border-border bg-background p-1.5 hover:bg-muted">x²</button>
-        <button onClick={() => handleNum("4")} className="border border-border bg-card p-1.5 hover:bg-muted font-bold text-sm">4</button>
-        <button onClick={() => handleNum("5")} className="border border-border bg-card p-1.5 hover:bg-muted font-bold text-sm">5</button>
-        <button onClick={() => handleNum("6")} className="border border-border bg-card p-1.5 hover:bg-muted font-bold text-sm">6</button>
-        <button onClick={() => handleOp("*")} className="border border-border bg-background p-1.5 hover:bg-muted text-primary font-bold">×</button>
+        <button onClick={() => handleScientificFunc("sqr")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">x²</button>
+        <button onClick={() => handleNum("4")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-[#1F2937]">4</button>
+        <button onClick={() => handleNum("5")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-[#1F2937]">5</button>
+        <button onClick={() => handleNum("6")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-[#1F2937]">6</button>
+        <button onClick={() => handleOp("*")} className="border-2 border-[#1F2937] bg-[#FF9600] p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-white">×</button>
 
         {/* Row 6 */}
-        <button onClick={() => handleScientificFunc("inv")} className="border border-border bg-background p-1.5 hover:bg-muted">1/x</button>
-        <button onClick={() => handleNum("1")} className="border border-border bg-card p-1.5 hover:bg-muted font-bold text-sm">1</button>
-        <button onClick={() => handleNum("2")} className="border border-border bg-card p-1.5 hover:bg-muted font-bold text-sm">2</button>
-        <button onClick={() => handleNum("3")} className="border border-border bg-card p-1.5 hover:bg-muted font-bold text-sm">3</button>
-        <button onClick={() => handleOp("-")} className="border border-border bg-background p-1.5 hover:bg-muted text-primary font-bold">-</button>
+        <button onClick={() => handleScientificFunc("inv")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">1/x</button>
+        <button onClick={() => handleNum("1")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-[#1F2937]">1</button>
+        <button onClick={() => handleNum("2")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-[#1F2937]">2</button>
+        <button onClick={() => handleNum("3")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-[#1F2937]">3</button>
+        <button onClick={() => handleOp("-")} className="border-2 border-[#1F2937] bg-[#FF9600] p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-lg transition-all text-white">-</button>
 
         {/* Row 7 */}
-        <button onClick={() => handleScientificFunc("fact")} className="border border-border bg-background p-1.5 hover:bg-muted">n!</button>
-        <button onClick={() => handleNum("0")} className="border border-border bg-card p-1.5 hover:bg-muted font-bold text-sm">0</button>
-        <button onClick={() => handleNum(".")} className="border border-border bg-card p-1.5 hover:bg-muted font-bold">.</button>
-        <button onClick={handleEval} className="border border-primary bg-primary text-primary-foreground p-1.5 hover:opacity-90 font-bold">=</button>
-        <button onClick={() => handleOp("+")} className="border border-border bg-background p-1.5 hover:bg-muted text-primary font-bold">+</button>
+        <button onClick={() => handleScientificFunc("fact")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-bold transition-all text-[#1F2937]">n!</button>
+        <button onClick={() => handleNum("0")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-[#1F2937]">0</button>
+        <button onClick={() => handleNum(".")} className="border-2 border-[#1F2937] bg-white p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-[#1F2937]">.</button>
+        <button onClick={handleEval} className="border-2 border-[#1F2937] bg-[#58CC02] p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-sm transition-all text-white">=</button>
+        <button onClick={() => handleOp("+")} className="border-2 border-[#1F2937] bg-[#FF9600] p-2 rounded-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-none shadow-neo-xs font-black text-lg transition-all text-white">+</button>
       </div>
     </div>
   )

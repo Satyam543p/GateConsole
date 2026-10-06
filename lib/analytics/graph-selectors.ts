@@ -9,37 +9,86 @@ import type { Concept, MasteryState, StoredAttempt, SrsCard, Question } from "@/
 
 // ─── Derive Mastery State ───────────────────────────────────────────────────
 
+let attemptCache = new WeakMap<StoredAttempt[], {
+  byQid: Map<string, { total: number, correct: number }>,
+  bySubject: Map<string, { total: number, correct: number }>
+}>()
+
 export function deriveMasteryState(
   concept: Concept,
   attempts: StoredAttempt[],
   srsCards: SrsCard[],
   questionMap: Map<string, Question>
 ): MasteryState {
-  // Find linked SRS Card if any
   const card = srsCards.find((c) => c.conceptId === concept.id)
-
-  // Find linked attempt accuracy on questions referencing this concept or subject
-  const linkedPyqIds = new Set(concept.pyqIds || [])
-  let totalAttempts = 0
-  let correctAttempts = 0
-
-  for (const a of attempts) {
-    if (!a.questionIds || !a.responses) continue
-    for (const qid of a.questionIds) {
-      if (linkedPyqIds.has(qid) || questionMap.get(qid)?.subject === concept.subjectId) {
-        totalAttempts++
+  
+  if (!attemptCache.has(attempts)) {
+    const byQid = new Map<string, { total: number, correct: number }>()
+    const bySubject = new Map<string, { total: number, correct: number }>()
+    
+    for (const a of attempts) {
+      if (!a.questionIds || !a.responses) continue
+      for (const qid of a.questionIds) {
         const q = questionMap.get(qid)
+        if (!q) continue
+        
         const resp = a.responses[qid]
-        if (q && resp !== undefined && resp !== null) {
-          if (q.type === "MCQ" && resp === q.answer) correctAttempts++
-          else if (q.type === "NAT" && typeof q.answer === "number" && Number(resp) === q.answer) correctAttempts++
+        let isCorr = false
+        if (resp !== undefined && resp !== null) {
+          if (q.type === "MCQ" && resp === q.answer) isCorr = true
+          else if (q.type === "NAT" && typeof q.answer === "number" && Number(resp) === q.answer) isCorr = true
           else if (q.type === "MSQ" && Array.isArray(resp) && Array.isArray(q.answer)) {
             if (resp.length === q.answer.length && resp.every((v) => (q.answer as number[]).includes(v))) {
-              correctAttempts++
+              isCorr = true
             }
           }
         }
+        
+        // by Qid
+        let qStats = byQid.get(qid)
+        if (!qStats) {
+          qStats = { total: 0, correct: 0 }
+          byQid.set(qid, qStats)
+        }
+        qStats.total++
+        if (isCorr) qStats.correct++
+        
+        // by Subject
+        if (q.subject) {
+          let sStats = bySubject.get(q.subject)
+          if (!sStats) {
+            sStats = { total: 0, correct: 0 }
+            bySubject.set(q.subject, sStats)
+          }
+          sStats.total++
+          if (isCorr) sStats.correct++
+        }
       }
+    }
+    attemptCache.set(attempts, { byQid, bySubject })
+  }
+
+  const { byQid, bySubject } = attemptCache.get(attempts)!
+  
+  let totalAttempts = 0
+  let correctAttempts = 0
+  let hasSpecificQids = false
+
+  const linkedPyqIds = concept.pyqIds || []
+  for (const qid of linkedPyqIds) {
+    const stats = byQid.get(qid)
+    if (stats) {
+      hasSpecificQids = true
+      totalAttempts += stats.total
+      correctAttempts += stats.correct
+    }
+  }
+
+  if (!hasSpecificQids && concept.subjectId) {
+    const sStats = bySubject.get(concept.subjectId)
+    if (sStats) {
+      totalAttempts = sStats.total
+      correctAttempts = sStats.correct
     }
   }
 

@@ -12,68 +12,173 @@
 import type { StoredAttempt, StudySession, MistakeEntry, Question } from "@/lib/domain/types"
 import { TOPICS, priorityScore } from "@/lib/exams/gate-cse/data"
 
-// ─── 1. Score Interval Estimator ──────────────────────────────────────────────
+// ─── 1. Score & Rank Prediction Engine ──────────────────────────────────────
 
 export interface ScoreIntervalEstimate {
-  low: number
-  mid: number
-  high: number
-  confidence: "Low" | "Medium" | "High"
+  rawLow: number
+  rawMid: number
+  rawHigh: number
+  gateScoreLow: number
+  gateScoreMid: number
+  gateScoreHigh: number
+  airBest: number
+  airConservative: number
+  airLabel: string
+  admissionsTier: string
+  percentile: string
+  confidence: "Insufficient Data" | "Low" | "Medium" | "High"
   basisReason: string
+  subjectScores: {
+    subject: string
+    maxGateMarks: number
+    predictedMarks: number
+    accuracy: number
+    status: "Strong" | "Moderate" | "Needs Focus" | "Untested"
+  }[]
+}
+
+export const GATE_SUBJECT_WEIGHTAGES: Record<string, number> = {
+  "General Aptitude": 15,
+  "Engineering Mathematics": 7,
+  "Discrete Mathematics": 8,
+  "Programming & Data Structures": 8,
+  "Algorithms": 8,
+  "Computer Organization": 9,
+  "Operating Systems": 9,
+  "Databases": 8,
+  "Computer Networks": 9,
+  "Theory of Computation": 8,
+  "Compiler Design": 5,
+  "Digital Logic": 4,
+}
+
+export function rawMarksToGateScore(raw: number): number {
+  if (raw <= 0) return 0
+  const Mq = 26.0 // Approximate general qualifying cutoff
+  const Mt = 78.0 // Approximate mean of top 0.1%
+  const Sq = 350  // Qualifying score
+  const St = 900  // Score for top 0.1%
+
+  if (raw < Mq) {
+    return Math.max(100, Math.round((raw / Mq) * Sq))
+  }
+  const score = Sq + ((St - Sq) * (raw - Mq)) / (Mt - Mq)
+  return Math.min(1000, Math.max(100, Math.round(score)))
+}
+
+export function rawMarksToRankEstimate(raw: number): { best: number; conservative: number; label: string; tier: string; percentile: string } {
+  if (raw >= 82) {
+    return { best: 1, conservative: 35, label: "AIR 1 – 35", tier: "IISc / IIT Bombay / Direct PSU Shortlist", percentile: "99.98%" }
+  } else if (raw >= 72) {
+    return { best: 36, conservative: 160, label: "AIR 36 – 160", tier: "Top Old IITs (IITB, IITD, IITM, IITK) CSE", percentile: "99.85%" }
+  } else if (raw >= 62) {
+    return { best: 161, conservative: 550, label: "AIR 161 – 550", tier: "Old IITs (IIT Kgp, IITR, IITG) & Top NITs", percentile: "99.40%" }
+  } else if (raw >= 52) {
+    return { best: 551, conservative: 1600, label: "AIR 551 – 1,600", tier: "Newer IITs (IIT Hyd, IIT Indore) & Top NITs", percentile: "98.20%" }
+  } else if (raw >= 42) {
+    return { best: 1601, conservative: 4200, label: "AIR 1,601 – 4,200", tier: "NITs, IIITs & State University M.Tech", percentile: "95.50%" }
+  } else if (raw >= 32) {
+    return { best: 4201, conservative: 9500, label: "AIR 4,201 – 9,500", tier: "Qualified Bracket (CCMT Counseling)", percentile: "90.00%" }
+  } else {
+    return { best: 9501, conservative: 25000, label: "> AIR 9,500", tier: "Foundation Building Phase", percentile: "< 85.00%" }
+  }
 }
 
 export function estimateGateScoreInterval(
   attempts: StoredAttempt[]
 ): ScoreIntervalEstimate {
   const mocks = attempts.filter((a) => a.kind === "mock" && a.totalMarks > 0)
+  const drills = attempts.filter((a) => a.kind !== "mock" && a.totalMarks > 0)
 
-  if (attempts.length === 0) {
-    return {
-      low: 35,
-      mid: 50,
-      high: 62,
-      confidence: "Low",
-      basisReason: "Based on initial GATE CSE syllabus weightage model (0 test attempts recorded).",
+  // Subject accuracy calculation
+  const subjectAccuracyMap = new Map<string, { scored: number; total: number }>()
+  for (const a of attempts) {
+    if (a.subject) {
+      const cur = subjectAccuracyMap.get(a.subject) || { scored: 0, total: 0 }
+      cur.scored += Math.max(0, a.scored)
+      cur.total += a.totalMarks
+      subjectAccuracyMap.set(a.subject, cur)
     }
   }
 
-  if (mocks.length > 0) {
-    const mockPcts = mocks.map((m) => (m.scored / m.totalMarks) * 100)
-    const avg = mockPcts.reduce((s, p) => s + p, 0) / mockPcts.length
-    const stdDev =
-      mockPcts.length > 1
-        ? Math.sqrt(mockPcts.reduce((s, p) => s + Math.pow(p - avg, 2), 0) / mockPcts.length)
-        : 8
+  const subjectScores = Object.entries(GATE_SUBJECT_WEIGHTAGES).map(([sub, weight]) => {
+    const stat = subjectAccuracyMap.get(sub)
+    let acc = 0
+    let status: "Strong" | "Moderate" | "Needs Focus" | "Untested" = "Untested"
 
-    const mid = Math.round(avg)
-    const low = Math.max(0, Math.round(mid - Math.max(6, stdDev * 1.5)))
-    const high = Math.min(100, Math.round(mid + Math.max(6, stdDev * 1.5)))
-    const confidence = mocks.length >= 3 ? "High" : "Medium"
+    if (stat && stat.total > 0) {
+      acc = Math.min(100, (Math.max(0, stat.scored) / stat.total) * 100)
+      status = acc >= 70 ? "Strong" : acc >= 40 ? "Moderate" : "Needs Focus"
+    }
+
+    const predictedMarks = Number(((acc / 100) * weight).toFixed(1))
 
     return {
-      low,
-      mid,
-      high,
-      confidence,
-      basisReason: `Based on ${mocks.length} full mock exam attempts (Average: ${mid}%).`,
+      subject: sub,
+      maxGateMarks: weight,
+      predictedMarks,
+      accuracy: Math.round(acc),
+      status,
+    }
+  })
+
+  let rawMid = 0
+  let rawLow = 0
+  let rawHigh = 0
+  let confidence: "Insufficient Data" | "Low" | "Medium" | "High" = "Insufficient Data"
+  let basisReason = "Not enough data. Take mock tests or subject drills to unlock rank predictions."
+
+  const totalAttemptedMarks = attempts.reduce((s, a) => s + a.totalMarks, 0)
+
+  if (totalAttemptedMarks >= 30) {
+    if (mocks.length > 0) {
+      const mockPcts = mocks.map((m) => (m.scored / m.totalMarks) * 100)
+      const avgMock = mockPcts.reduce((s, p) => s + p, 0) / mockPcts.length
+      const stdDev =
+        mockPcts.length > 1
+          ? Math.sqrt(mockPcts.reduce((s, p) => s + Math.pow(p - avgMock, 2), 0) / mockPcts.length)
+          : 6
+
+      rawMid = Math.round(avgMock)
+      rawLow = Math.max(0, Math.round(rawMid - Math.max(4, stdDev * 1.2)))
+      rawHigh = Math.min(100, Math.round(rawMid + Math.max(4, stdDev * 1.2)))
+      confidence = mocks.length >= 3 ? "High" : "Medium"
+      basisReason = `Calculated from ${mocks.length} full mock test attempts.`
+    } else if (drills.length > 0) {
+      const subjectSum = subjectScores.reduce((s, item) => s + item.predictedMarks, 0)
+      const totalWeightCovered = subjectScores.filter(s => s.status !== "Untested").reduce((s, i) => s + i.maxGateMarks, 0)
+      
+      if (totalWeightCovered > 0) {
+        rawMid = Math.round(subjectSum)
+        rawLow = Math.max(0, rawMid - 5)
+        rawHigh = Math.min(100, rawMid + 8)
+        confidence = drills.length >= 5 && totalWeightCovered >= 40 ? "Medium" : "Low"
+        basisReason = `Derived from performance across ${Math.round(totalWeightCovered)}% of the GATE syllabus.`
+      }
     }
   }
 
-  // Fallback to subject drill accuracy
-  const totalScored = attempts.reduce((s, a) => s + Math.max(0, a.scored), 0)
-  const totalMarks = attempts.reduce((s, a) => s + a.totalMarks, 0)
-  const overallPct = totalMarks > 0 ? (totalScored / totalMarks) * 100 : 50
+  const gateScoreLow = rawMarksToGateScore(rawLow)
+  const gateScoreMid = rawMarksToGateScore(rawMid)
+  const gateScoreHigh = rawMarksToGateScore(rawHigh)
 
-  const mid = Math.round(overallPct * 0.85) // conservative scaling for full paper
-  const low = Math.max(0, mid - 10)
-  const high = Math.min(100, mid + 12)
+  const rankData = rawMarksToRankEstimate(rawMid)
 
   return {
-    low,
-    mid,
-    high,
-    confidence: "Low",
-    basisReason: `Estimated from ${attempts.length} subject drill attempts (Average accuracy: ${Math.round(overallPct)}%).`,
+    rawLow,
+    rawMid,
+    rawHigh,
+    gateScoreLow,
+    gateScoreMid,
+    gateScoreHigh,
+    airBest: rankData.best,
+    airConservative: rankData.conservative,
+    airLabel: rankData.label,
+    admissionsTier: rankData.tier,
+    percentile: rankData.percentile,
+    confidence,
+    basisReason,
+    subjectScores,
   }
 }
 
@@ -257,8 +362,8 @@ export function getHighestYieldHourSuggestion(
       title: `Eliminate Avoidable Errors in ${topSilly.subject}`,
       subject: topSilly.subject,
       impactMarks: `+${topSilly.marksLost} marks potential`,
-      reason: `You lost ${topSilly.marksLost} marks to calculation or misread errors in ${topSilly.subject}. Review these in Mistake Notebook to recover easy marks.`,
-      actionLink: "/mistakes",
+      reason: `You lost ${topSilly.marksLost} marks to calculation or misread errors in ${topSilly.subject}. Review these topics to recover easy marks.`,
+      actionLink: "/todo",
     }
   }
 

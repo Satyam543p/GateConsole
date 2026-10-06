@@ -19,6 +19,7 @@ export interface Question {
   subject: string
   /** Free-text chapter/topic label, e.g. "Greedy algorithms". */
   topic?: string
+  chapterId?: string
   type: QuestionType
   marks: Marks
   /** The question stem. Supports plain text; use `code` for a code block. */
@@ -68,6 +69,13 @@ export interface TestDefinition {
   durationMinutes: number
   description: string
   questionIds: string[]
+  /**
+   * Optional explicit timer mode. When "stopwatch", the exam runs as an untimed
+   * drill showing elapsed time only. When "countdown", the exam counts down from
+   * durationMinutes with auto-submit on timeout.
+   * If omitted, ExamRunner infers the mode from `kind` and `id` for backward compat.
+   */
+  timerType?: "stopwatch" | "countdown"
 }
 
 /* ------------------------------------------------------------------ *
@@ -117,14 +125,16 @@ export function isCorrect(q: Question, r: Response): boolean {
 }
 
 /** Marks lost for a wrong answer. MSQ and NAT carry no penalty. */
-export function penaltyFor(q: Question): number {
+export function penaltyFor(q: Question, mcqNegativeFraction = 1 / 3): number {
   if (q.type !== "MCQ") return 0
-  return q.marks === 1 ? 1 / 3 : 2 / 3
+  // GATE uses 1/3 for all marks (1-mark: -1/3, 2-mark: -2/3, so marks * 1/3)
+  // JEE 4-mark MCQ uses -1, which is marks * 1/4. Pass mcqNegativeFraction=1/4 for JEE.
+  return q.marks * mcqNegativeFraction
 }
 
-export function scoreFor(q: Question, r: Response): number {
+export function scoreFor(q: Question, r: Response, mcqNegativeFraction = 1 / 3): number {
   if (!isAttempted(r)) return 0
-  return isCorrect(q, r) ? q.marks : -penaltyFor(q)
+  return isCorrect(q, r) ? q.marks : -penaltyFor(q, mcqNegativeFraction)
 }
 
 export interface QuestionOutcome {
@@ -163,6 +173,7 @@ export function scoreAttempt(
   questions: Question[],
   responses: Record<string, Response>,
   timePerQuestion: Record<string, number> = {},
+  mcqNegativeFraction = 1 / 3,
 ): ScoredAttempt {
   const outcomes: QuestionOutcome[] = questions.map((q) => {
     const response = responses[q.id] ?? null
@@ -173,7 +184,7 @@ export function scoreAttempt(
       response,
       attempted,
       correct,
-      score: scoreFor(q, response),
+      score: scoreFor(q, response, mcqNegativeFraction),
       seconds: timePerQuestion[q.id] ?? 0,
     }
   })

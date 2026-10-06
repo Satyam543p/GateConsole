@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowRight, Flame, Check, Play, Map, Target } from "lucide-react"
+import { ArrowRight, Flame, Check, Play, Map, Target, BookOpen, Sparkles, Zap, ClipboardList } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -74,96 +74,94 @@ export function ConsoleDashboard() {
   const { streak, loading: dailyLoading } = useDailyChallenge()
 
   return (
-    <div className="relative z-10 pt-12 pb-24 px-4 md:px-6 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="relative z-10 pt-10 sm:pt-12 md:pt-12 pb-28 md:pb-44 px-4 sm:px-6 md:px-8 max-w-6xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500">
       
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
-        <div>
-          <h1 className="text-[32px] font-heading font-black text-primary-text uppercase tracking-tight">
-            {greeting}, {userName}
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-5 md:gap-6 mb-6 md:mb-8">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-heading font-black text-primary-text uppercase tracking-tight leading-[1.1]">
+            {greeting},<br className="sm:hidden" /> {userName}
           </h1>
-          <p className="text-[16px] text-secondary-text mt-1 font-bold">
-            Track your progress and drill your weak areas. {activeExamId !== "gate-cse" && <span className="text-[#FF9600]">[{activeExamId.toUpperCase()} Demo]</span>}
+          <p className="text-sm md:text-base text-secondary-text font-bold mt-2">
+            Track your progress and drill your weak areas. {activeExamId !== "gate-cse" && <span className="text-[#FF9600]">[{activeExamId.toUpperCase()}]</span>}
           </p>
         </div>
-        <div className="flex items-center gap-3 bg-[#FFC800] p-3 rounded-2xl neo-card transition-transform hover:rotate-2">
-          <div className="size-12 rounded-xl bg-white border-[3px] border-[#1F2937] flex items-center justify-center shadow-neo-sm">
-            <Target className="size-6 text-[#1F2937]" />
-          </div>
-          <div className="pr-2">
-            <p className="text-[12px] font-black text-[#1F2937] uppercase tracking-wider">Readiness Score</p>
-            <p className="text-[24px] font-heading font-black text-[#1F2937] leading-none mt-1">{completionPercentage}%</p>
+        
+        <div className="w-full md:w-auto mt-1 md:mt-0">
+          <div className="flex items-center gap-3 sm:gap-4 bg-[#FFC800] px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 rounded-2xl sm:rounded-3xl border-[3px] border-[#1F2937] shadow-neo shrink-0 cursor-default">
+            <div className="size-12 sm:size-14 rounded-full bg-white border-[3px] border-[#1F2937] flex items-center justify-center shrink-0">
+              <Target className="size-6 sm:size-7 text-[#1F2937]" strokeWidth={2.5} />
+            </div>
+            <div className="flex flex-col justify-center">
+              <p className="text-[10px] sm:text-xs font-black text-[#1F2937] uppercase tracking-wider mb-0.5">Readiness Score</p>
+              <p className="text-3xl sm:text-4xl font-heading font-black text-[#1F2937] leading-none">{completionPercentage}%</p>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Daily Challenge Card */}
-        <div className="md:col-span-2 space-y-4">
-          <h2 className="text-[20px] font-heading font-black text-primary-text uppercase">
-            Daily Challenge
-          </h2>
-          <Card className="p-6 bg-[#1CB0F6] text-white border-[3px] border-[#1F2937] shadow-neo transition-transform hover:-rotate-1">
-            <div className="flex flex-col h-full justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Flame className="size-6 text-[#FF9600] drop-shadow-md" fill="#FF9600" />
-                  <span className="text-[15px] font-black tracking-wide uppercase drop-shadow-sm">
-                    Challenge of the Day
-                  </span>
-                </div>
-                <div className="flex items-end gap-2 mb-2">
-                  <span className="font-heading text-[40px] font-black leading-none drop-shadow-sm">
-                    {dailyLoading ? "…" : streak}
-                  </span>
-                  <span className="text-[13px] font-black uppercase opacity-90 mb-1">
-                    day streak
-                  </span>
-                </div>
-                <p className="text-[14px] font-bold opacity-90 mb-6 drop-shadow-sm">
-                  {streak === 0
-                    ? "Solve today's question to start a streak."
-                    : "Answer today correctly to keep the streak alive."}
-                </p>
-              </div>
+      {/* ── DASHBOARD WIDGETS ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 items-start mt-4 md:mt-2">
 
-              <Link href="/daily" className={cn(buttonVariants({ variant: "outline" }), "w-fit gap-2 border-[3px] border-[#1F2937] bg-white text-[#1F2937] shadow-neo-sm hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 active:shadow-none hover:bg-white")}>
-                Attempt Challenge <ArrowRight className="size-5" />
+        {/* Daily Challenge – 2 cols */}
+        <div className="md:col-span-2 flex flex-col space-y-2">
+          <h2 className="text-sm md:text-[18px] font-heading font-black text-primary-text uppercase tracking-wide">Daily Challenge</h2>
+          <Card className="p-4 sm:p-6 bg-[#1CB0F6] text-white border-[3px] border-[#1F2937] shadow-neo-sm sm:shadow-neo hover:-rotate-1 transition-transform flex-1">
+            <div className="flex flex-col h-full gap-2">
+              <div className="flex items-center gap-1.5">
+                <Flame className="size-4 text-[#FF9600] shrink-0" fill="#FF9600" />
+                <span className="text-[10px] sm:text-[11px] font-black tracking-wide uppercase">Challenge of the Day</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-heading text-4xl sm:text-5xl font-black leading-none">{dailyLoading ? "…" : streak}</span>
+                <span className="text-[10px] sm:text-[12px] font-black uppercase opacity-90">day streak</span>
+              </div>
+              <p className="text-xs sm:text-sm font-bold opacity-90">
+                {streak === 0 ? "Solve today's question to start a streak." : "Answer today correctly to keep the streak alive."}
+              </p>
+              <Link
+                href="/daily"
+                className="mt-3 sm:mt-auto inline-flex items-center justify-center gap-1.5 border-[2.5px] border-[#1F2937] bg-white text-[#1F2937] shadow-neo-xs hover:-translate-y-0.5 hover:bg-white rounded-xl font-black uppercase tracking-wide transition-all text-xs sm:text-sm px-4 py-2 sm:py-2.5 w-full"
+              >
+                Attempt Challenge <ArrowRight className="size-3.5 sm:size-4" />
               </Link>
             </div>
           </Card>
         </div>
 
-        {/* Mini Analytics Dashboards */}
-        <div className="space-y-4">
-          <h2 className="text-[20px] font-heading font-black text-primary-text uppercase">
-            Revision Debt
-          </h2>
-          <Card className="p-4 h-[216px] overflow-y-auto neo-card bg-[#CE82FF] transition-transform hover:rotate-1">
+
+        {/* Revision Debt – 1 col */}
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm md:text-[18px] font-heading font-black text-primary-text uppercase tracking-wide">Revision Debt</h2>
+            {revisionDebt.length > 0 && (
+              <span className="text-[10px] md:text-xs font-black bg-[#FF4B4B] text-white px-2 py-0.5 rounded-full border-2 border-[#1F2937] leading-none shadow-neo-xs mt-0.5">
+                {revisionDebt.length}
+              </span>
+            )}
+          </div>
+          <Card className="px-4 pt-4 pb-4 flex flex-col overflow-hidden neo-card bg-[#CE82FF] hover:rotate-1 transition-transform border-[3px] shadow-neo-sm sm:shadow-neo">
             {revisionDebt.length > 0 ? (
-              <ul className="space-y-3">
+              <ul className="space-y-2 overflow-y-auto custom-scrollbar pr-1 max-h-[100px] md:max-h-[160px]">
                 {revisionDebt.map(sub => (
-                  <li key={sub.id} className="flex items-center justify-between bg-white border-[3px] border-[#1F2937] rounded-xl p-2 shadow-neo-sm">
-                    <span className="text-[14px] font-bold text-primary-text line-clamp-1 flex-1 pr-2">
-                      {sub.name}
-                    </span>
-                    <span className="text-[11px] font-black text-white bg-[#FF4B4B] px-2 py-1 rounded-lg shrink-0 border-[2px] border-[#1F2937]">
-                      URGENT
-                    </span>
+                  <li key={sub.id} className="flex items-center justify-between bg-white border-[2.5px] border-[#1F2937] rounded-xl p-2 shadow-neo-xs">
+                    <span className="text-xs sm:text-[14px] font-bold text-primary-text line-clamp-1 flex-1 pr-2">{sub.name}</span>
+                    <span className="text-[9px] sm:text-[11px] font-black text-white bg-[#FF4B4B] px-1.5 py-0.5 rounded-md sm:rounded-lg shrink-0 border-2 border-[#1F2937]">URGENT</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center bg-white border-[3px] border-[#1F2937] rounded-xl p-4 shadow-neo-sm">
-                <Check className="size-10 text-[#58CC02] mb-2" strokeWidth={3} />
-                <p className="text-[16px] font-black text-primary-text uppercase">No Revision Debt!</p>
-                <p className="text-[14px] font-bold text-secondary-text mt-1">You are fully caught up.</p>
+              <div className="h-full flex flex-col items-center justify-center text-center bg-white border-[2.5px] border-[#1F2937] rounded-xl p-4 shadow-neo-xs min-h-[100px]">
+                <Check className="size-8 sm:size-10 text-[#58CC02] mb-1.5 sm:mb-2" strokeWidth={3} />
+                <p className="text-xs sm:text-[14px] font-black text-primary-text uppercase">No Revision Debt!</p>
+                <p className="text-[10px] sm:text-[12px] font-bold text-secondary-text mt-0.5 sm:mt-1">You are fully caught up.</p>
               </div>
             )}
           </Card>
         </div>
 
       </div>
+
+
 
       {/* Subject Table */}
       <section className="pt-4">
@@ -305,7 +303,7 @@ export function ConsoleDashboard() {
                           <div className="flex flex-col justify-center items-center h-full">
                             <span className="md:hidden text-[9px] font-black uppercase text-secondary-text mb-1.5">Practice</span>
                             <Link
-                              href={`/tests/subj-${sub.id}?mode=practice`}
+                              href={`/tests?filter=subject&subject=${sub.id}`}
                               title={`Drill ${sub.name}`}
                               aria-label={`Drill ${sub.name}`}
                               className="inline-flex items-center justify-center gap-1.5 size-9 md:size-auto md:px-3 md:py-1.5 md:min-h-0 bg-[#FF9600] border-[3px] border-[#1F2937] text-white rounded-[12px] font-heading font-black text-[11px] md:text-[13px] hover:-translate-y-0.5 active:translate-x-1 active:translate-y-1 shadow-neo-sm active:shadow-none transition-all uppercase mx-auto"

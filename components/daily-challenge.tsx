@@ -2,8 +2,13 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import Latex from "react-latex-next"
+import dynamic from 'next/dynamic'
 import { ArrowRight, Check, ChevronLeft, Flame, RefreshCw, X } from "lucide-react"
+
+const Latex = dynamic(() => import('react-latex-next'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-200 h-4 rounded w-16 inline-block" />
+})
 
 import { isAttempted } from "@/lib/test-types"
 import type { Response } from "@/lib/test-types"

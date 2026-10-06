@@ -114,6 +114,13 @@
   }
   body {
     @apply bg-background text-primary-text font-sans;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media print {
+    @page {
+      margin: 1cm;
+      size: auto;
+    }
   }
   /* Keep anchor targets and programmatic scrolls clear of the sticky header. */
   html {
@@ -138,6 +145,10 @@
   background-size: 56px 56px;
 }
 
+@utility shadow-neo-xs {
+  box-shadow: 1px 1px 0px 0px #1F2937;
+}
+
 @utility shadow-neo {
   box-shadow: 4px 4px 0px 0px #1F2937;
 }
@@ -156,6 +167,19 @@
 
 @utility neo-card {
   @apply border-[3px] border-[#1F2937] shadow-neo bg-card rounded-2xl;
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility px-safe {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 @layer utilities {
@@ -178,5 +202,13 @@
   }
   .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.4);
+  }
+  
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }

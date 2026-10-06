@@ -1,3 +1,13 @@
+
+function mulberry32(a: number) {
+  return function() {
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+}
+
 /**
  * lib/analytics/selectors.ts
  *
@@ -113,17 +123,30 @@ export interface ChallengeSeedSubject {
   weightage: number
 }
 
+function hashString(str: string): number {
+  let hash = 5381
+  for (let i = 0; i < str.length; i++) {
+    // Bug #5 fix: `hash | 0` enforces 32-bit signed integer coercion on every
+    // iteration, preventing float promotion for long strings. The previous
+    // `hash & hash` was a no-op that did NOT coerce the integer correctly.
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0
+  }
+  return Math.abs(hash)
+}
+
 /**
- * Pick today's challenge question. Bias (moved from the dashboard card):
- * prefer questions from non-completed subjects with the highest weightage;
+ * Pick today's challenge question using deterministic Date-Seeded Hashing:
+ * Prefer questions from non-completed subjects with the highest weightage;
  * once everything is complete, fall back to the highest-weightage subject.
- * Matches questions to subjects by *name* (the bank uses names like "Algorithms"),
- * which also fixes the old id-vs-name mismatch that silently served questions[0].
+ * Hashes the date string (YYYY-MM-DD) so every user gets a deterministic, non-repeating
+ * challenge question per day without random duplication on consecutive days.
  */
 export function seedChallengeQuestionId(
   questions: Question[],
   subjects: ChallengeSeedSubject[],
-  subjectProgress: Record<string, SubjectProgressState>
+  subjectProgress: Record<string, SubjectProgressState>,
+  dateIso?: string,
+  rerollCount = 0
 ): string {
   if (questions.length === 0) return ""
 
@@ -146,7 +169,16 @@ export function seedChallengeQuestionId(
   for (const s of pool) if (s.weightage > maxWeight) maxWeight = s.weightage
   const top = pool.filter((s) => s.weightage === maxWeight)
 
-  return top[Math.floor(Math.random() * top.length)].q.id
+  const dateSeed = dateIso ?? getTodayIsoDate()
+  const seedString = `${dateSeed}-daily-gate-cse-${rerollCount}`
+
+  // Bug #3 fix: guard against empty top array — modulo 0 produces NaN.
+  // Fallback to the full pool (scored) if top is somehow empty.
+  const safePool = top.length > 0 ? top : (pool.length > 0 ? pool : scored)
+  if (safePool.length === 0) return questions[0]?.id ?? ""
+
+  const index = hashString(seedString) % safePool.length
+  return safePool[index].q.id
 }
 
 // ─── Readiness Meter Heuristic (0 to 100%) ────────────────────────────────────

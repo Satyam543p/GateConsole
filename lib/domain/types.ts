@@ -115,6 +115,8 @@ export interface Concept {
   subjectId: EntityId
   chapterId: EntityId
   label: string
+  name?: string
+  category?: string
   kind: ConceptKind
   /** 1–2 sentences, exam-focused */
   summary: string
@@ -130,6 +132,11 @@ export interface Concept {
   examRelevance: 1 | 2 | 3 | 4 | 5
   commonTraps?: string[]
   pyqIds?: string[]
+  keyFormulae?: string[]
+  codeSnippet?: string
+  mindmap?: string | { core: string; branches: string[] }
+  imageUrl?: string
+  pyqMapping?: string[]
   resources?: { label: string; ref: string }[]
 }
 
@@ -145,6 +152,7 @@ export interface Question {
   subject: string
   /** Free-text chapter/topic label */
   topic?: string
+  chapterId?: string
   type: QuestionType
   marks: Marks
   /** Question stem. Supports plain text; use `code` for monospace block */
@@ -170,6 +178,7 @@ export interface Question {
   verified: boolean
   verificationSource?: string
   confidence?: "low" | "medium" | "high"
+  provenance?: string
   tags?: string[]
   imageUrl?: string
   answerAliases?: string[]
@@ -185,6 +194,8 @@ export interface TestDefinition {
   durationMinutes: number
   description: string
   questionIds: string[]
+  /** Optional explicit timer mode. "stopwatch" = untimed drill showing elapsed time; "countdown" = counts down with auto-submit. */
+  timerType?: "stopwatch" | "countdown"
 }
 
 // ─── Daily Challenge ──────────────────────────────────────────────────────────
@@ -309,6 +320,7 @@ export interface PlanBlock {
   reason: string             // one-sentence plain-English explanation
   completed: boolean
   overridden?: boolean       // user manually changed this block
+  isCustom?: boolean         // student custom added to-do task
 }
 
 export interface WeeklyAvailability {

@@ -66,13 +66,12 @@ export function KeyboardShortcutsModal({
 
         const routes: Record<string, string> = {
           h: "/",
-          p: "/plan",
+          d: "/todo",
           a: "/analysis",
           c: "/map",
           r: "/revise",
           f: "/formulas",
           t: "/tests",
-          m: "/mistakes",
           s: "/settings",
           i: "/import",
         }
@@ -97,7 +96,7 @@ export function KeyboardShortcutsModal({
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-2xl border-2 border-primary bg-card p-6 font-mono space-y-6 shadow-2xl">
+      <div className="w-full max-w-2xl border-2 border-primary bg-card p-6 font-mono space-y-6 shadow-neo rounded-[16px]">
         <div className="flex items-center justify-between border-b border-border pb-4">
           <div className="flex items-center gap-2 text-foreground font-bold">
             <Keyboard className="size-5 text-primary" />
@@ -124,8 +123,8 @@ export function KeyboardShortcutsModal({
                 <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g h</kbd>
               </li>
               <li className="flex items-center justify-between">
-                <span>Adaptive Planner</span>
-                <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g p</kbd>
+                <span>To-Do List</span>
+                <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g d</kbd>
               </li>
               <li className="flex items-center justify-between">
                 <span>Priority Matrix</span>
@@ -145,12 +144,9 @@ export function KeyboardShortcutsModal({
               </li>
               <li className="flex items-center justify-between">
                 <span>Tests</span>
-                <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g t</kbd>
+                <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g e</kbd>
               </li>
-              <li className="flex items-center justify-between">
-                <span>Mistake Notebook</span>
-                <kbd className="border border-border bg-background px-2 py-0.5 text-[10px] text-foreground">g m</kbd>
-              </li>
+
             </ul>
           </div>
 

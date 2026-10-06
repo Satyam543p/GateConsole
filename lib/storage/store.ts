@@ -427,7 +427,10 @@ class LocalStoreImpl implements StudyStore {
     } else {
       records.unshift(record) // newest first
     }
-    this.writeCollection(collection, records)
+    const err = this.writeCollection(collection, records)
+    if (err) {
+      throw new Error(`Storage failed: ${err.message}`)
+    }
     // Notify same-tab listeners (cross-tab is handled by the 'storage' event)
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("gcc-store-change", { detail: { collection } }))
@@ -438,7 +441,10 @@ class LocalStoreImpl implements StudyStore {
   async remove(collection: Collection, id: string): Promise<void> {
     const records = this.readCollection<{ id: string }>(collection)
     const next = records.filter((r) => r.id !== id)
-    this.writeCollection(collection, next)
+    const err = this.writeCollection(collection, next)
+    if (err) {
+      throw new Error(`Storage failed: ${err.message}`)
+    }
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("gcc-store-change", { detail: { collection } }))
     }

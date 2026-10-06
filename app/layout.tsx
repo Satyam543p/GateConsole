@@ -63,6 +63,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1, // Prevents zooming on input focus on mobile
+  viewportFit: 'cover',
   colorScheme: 'light',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#1CB0F6' },
@@ -82,9 +83,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`bg-background ${_nunito.variable} ${_dmSans.variable}`}
+      className={`bg-background overflow-x-hidden ${_nunito.variable} ${_dmSans.variable}`}
     >
-      <body className="antialiased flex h-dvh overflow-hidden bg-background text-primary-text font-sans relative">
+      <body className="antialiased min-h-screen bg-background text-primary-text font-sans relative flex flex-col overflow-x-hidden max-w-full">
         <BackgroundElements />
         <SiteNav />
         <LayoutWrapper>
